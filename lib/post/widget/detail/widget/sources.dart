@@ -75,11 +75,17 @@ class SourceCard extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.only(left: 8),
                     child: Center(
-                      child: FaIcon(
-                        getHostIcon(url) ?? Icons.link,
-                        size: 16,
-                        color: Colors.grey,
-                      ),
+                      child: getHostIcon(url) != null
+                          ? FaIcon(
+                              getHostIcon(url)!,
+                              size: 16,
+                              color: Colors.grey,
+                            )
+                          : const Icon(
+                              Icons.link,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
                     ),
                   ),
                 ),

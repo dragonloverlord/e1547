@@ -4,7 +4,6 @@ import 'package:animations/animations.dart';
 import 'package:e1547/settings/settings.dart';
 import 'package:e1547/shared/shared.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_screen_lock/flutter_screen_lock.dart';
 import 'package:flutter_sub/flutter_sub.dart';
 import 'package:local_auth/local_auth.dart';
@@ -143,14 +142,14 @@ Future<void> tryLocalAuth({
   try {
     bool success = await localAuth.authenticate(
       localizedReason: 'Authenticate to unlock.',
-      options: const AuthenticationOptions(stickyAuth: true),
+      persistAcrossBackgrounding: true,
     );
     if (success) {
       onSuccess?.call();
     } else {
       onFailure?.call();
     }
-  } on PlatformException {
+  } on LocalAuthException {
     messenger.showSnackBar(
       const SnackBar(
         content: Text('Severe failure in biometric authentication'),

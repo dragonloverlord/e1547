@@ -124,10 +124,10 @@ Future<void> updateFollowNotifications({
     }
 
     await notifications.show(
-      follow.id,
-      title,
-      description,
-      notificationDetails,
+      id: follow.id,
+      title: title,
+      body: description,
+      notificationDetails: notificationDetails,
       payload: json.encode(
         NotificationPayload(
           identity: identity,
@@ -151,16 +151,15 @@ Future<void> updateFollowNotifications({
           summary: true,
         );
         await notifications.show(
-          followsBackgroundTaskKey.hashCode,
-          'New posts!',
-          null,
-          notificationDetails,
+          id: followsBackgroundTaskKey.hashCode,
+          title: 'New posts!',
+          notificationDetails: notificationDetails,
           payload: json.encode(
             NotificationPayload(identity: identity, type: 'follow'),
           ),
         );
       } else {
-        notifications.cancel(followsBackgroundTaskKey.hashCode);
+        notifications.cancel(id: followsBackgroundTaskKey.hashCode);
       }
     }
 
@@ -168,7 +167,7 @@ Future<void> updateFollowNotifications({
   }
 
   for (final follow in seen) {
-    notifications.cancel(follow.id);
+    notifications.cancel(id: follow.id);
   }
 }
 

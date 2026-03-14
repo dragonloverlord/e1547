@@ -357,7 +357,7 @@ class _RangeDialogState extends State<RangeDialog> {
     controller.text = updatedRange.toString();
   }
 
-  Widget _buildComparisonIcon(IconData icon) {
+  Widget _buildComparisonIcon(FaIconData icon) {
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
       child: Center(child: FaIcon(icon)),

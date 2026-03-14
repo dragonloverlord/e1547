@@ -68,7 +68,7 @@ Future<FlutterLocalNotificationsPlugin> initializeNotifications({
   FlutterLocalNotificationsPlugin notifications =
       FlutterLocalNotificationsPlugin();
   await notifications.initialize(
-    const InitializationSettings(
+    settings: const InitializationSettings(
       android: AndroidInitializationSettings('splash'),
       iOS: DarwinInitializationSettings(
         requestSoundPermission: false,

@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-final Map<IconData, List<String>> hostIcons = {
+final Map<FaIconData, List<String>> hostIcons = {
   FontAwesomeIcons.mastodon: ['mastodon.art', 'baraag.net', 'aryion.com'],
   FontAwesomeIcons.discord: ['discord.com', 'cdn.discordapp.com'],
   FontAwesomeIcons.tumblr: ['media.tumblr.com', 'tumblr.com'],
@@ -20,7 +19,7 @@ final Map<IconData, List<String>> hostIcons = {
   FontAwesomeIcons.splotch: ['inkbunny.net', 'nl.ib.metapix.net'],
 };
 
-IconData? getHostIcon(String url) {
+FaIconData? getHostIcon(String url) {
   Uri? uri = Uri.tryParse(url);
   if (uri != null) {
     for (final entry in hostIcons.entries) {

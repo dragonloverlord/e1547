@@ -139,9 +139,6 @@ extension M2ThemeData on ThemeData {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     ),
-    pageTransitionsTheme: SnapshotlessPageTransitionTheme(
-      parent: theme.pageTransitionsTheme,
-    ),
   );
 }
 
@@ -162,42 +159,3 @@ class AndroidStretchScrollBehaviour extends ScrollBehavior {
   }
 }
 
-class SnapshotlessPageTransitionTheme extends PageTransitionsTheme {
-  const SnapshotlessPageTransitionTheme({this.parent});
-
-  final PageTransitionsTheme? parent;
-
-  @override
-  Map<TargetPlatform, PageTransitionsBuilder> get builders =>
-      _transformBuilders(parent);
-
-  Map<TargetPlatform, PageTransitionsBuilder> _transformBuilders(
-    PageTransitionsTheme? parent,
-  ) {
-    Map<TargetPlatform, PageTransitionsBuilder> builders = {};
-    if (parent != null) {
-      builders.addAll(
-        Map.fromEntries(
-          parent.builders.entries.map((e) {
-            if (e.value is ZoomPageTransitionsBuilder) {
-              return MapEntry(
-                e.key,
-                const ZoomPageTransitionsBuilder(allowSnapshotting: false),
-              );
-            } else {
-              return e;
-            }
-          }),
-        ),
-      );
-    }
-    for (final platform in TargetPlatform.values) {
-      if (builders[platform] == null) {
-        builders[platform] = const ZoomPageTransitionsBuilder(
-          allowSnapshotting: false,
-        );
-      }
-    }
-    return builders;
-  }
-}

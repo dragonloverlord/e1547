@@ -163,7 +163,7 @@ class DTextGrammar extends GrammarDefinition<DTextElement> {
   Parser<void> blockMarker(String tag) => (
     char('['),
     char('/').optional(),
-    stringIgnoreCase(tag),
+    string(tag, ignoreCase: true),
     (
       char('='),
       any().starLazy(char(']')).flatten(),
@@ -179,11 +179,11 @@ class DTextGrammar extends GrammarDefinition<DTextElement> {
     String end,
     Parser<DTextElement>? inner,
   ) {
-    Parser<void> limit = stringIgnoreCase('[/$end]') | endOfInput();
+    Parser<void> limit = string('[/$end]', ignoreCase: true) | endOfInput();
     return (
       (
         char('['),
-        stringIgnoreCase(start),
+        string(start, ignoreCase: true),
         (
           char('='),
           any().starLazy(char(']')).flatten(),
@@ -268,7 +268,7 @@ class DTextGrammar extends GrammarDefinition<DTextElement> {
   Parser<DTextElement> header() => (
     (
       char(' ').star(),
-      charIgnoringCase('h'),
+      char('h', ignoreCase: true),
       pattern('1-6').map(int.parse),
       char('.'),
       char(' ').star(),
@@ -301,8 +301,8 @@ class DTextGrammar extends GrammarDefinition<DTextElement> {
       .map((e) => e.name)
       .map(
         (e) => (
-          stringIgnoreCase(e),
-          stringIgnoreCase(' #'),
+          string(e, ignoreCase: true),
+          string(' #', ignoreCase: true),
           digit().plus().flatten().map(int.parse),
         ).toSequenceParser(),
       )
@@ -344,9 +344,9 @@ class DTextGrammar extends GrammarDefinition<DTextElement> {
     ).toSequenceParser().map((e) => e.$2).optional(),
     url(
       (
-        stringIgnoreCase('http'),
-        stringIgnoreCase('s').optional(),
-        stringIgnoreCase('://'),
+        string('http', ignoreCase: true),
+        string('s', ignoreCase: true).optional(),
+        string('://', ignoreCase: true),
       ).toSequenceParser().flatten(),
     ),
   ).toSequenceParser().map((e) => DTextLink(e.$1, e.$2));
