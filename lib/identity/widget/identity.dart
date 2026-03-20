@@ -118,7 +118,6 @@ class _IdentityPageState extends State<IdentityPage> {
     Widget form() {
       String? apiKeysUrl = context.watch<ClientFactory>().apiKeysUrl(
         hostController.text,
-        usernameController.text,
       );
       String? registrationUrl = context.watch<ClientFactory>().registrationUrl(
         hostController.text,
