@@ -17,26 +17,35 @@ class PullToRefresh extends StatelessWidget {
   Widget build(BuildContext context) {
     return SubValue(
       create: () => RefreshController(),
-      builder: (context, refreshController) => CallbackShortcuts(
-        bindings: {
-          const SingleActivator(LogicalKeyboardKey.f5): () => refreshController
-              .requestRefresh(duration: const Duration(milliseconds: 100)),
+      builder: (context, refreshController) => SubEffect(
+        effect: () {
+          bool handler(KeyEvent event) {
+            if (event is KeyDownEvent &&
+                event.logicalKey == LogicalKeyboardKey.f5) {
+              refreshController.requestRefresh(
+                duration: const Duration(milliseconds: 100),
+              );
+              return true;
+            }
+            return false;
+          }
+
+          HardwareKeyboard.instance.addHandler(handler);
+          return () => HardwareKeyboard.instance.removeHandler(handler);
         },
-        child: FocusScope(
-          autofocus: true,
-          child: SmartRefresher(
-            controller: refreshController,
-            onRefresh: () async {
-              try {
-                await onRefresh();
-                refreshController.refreshCompleted();
-              } on Object {
-                refreshController.refreshFailed();
-              }
-            },
-            header: const ClassicHeader(),
-            child: child,
-          ),
+        keys: const [],
+        child: SmartRefresher(
+          controller: refreshController,
+          onRefresh: () async {
+            try {
+              await onRefresh();
+              refreshController.refreshCompleted();
+            } on Object {
+              refreshController.refreshFailed();
+            }
+          },
+          header: const ClassicHeader(),
+          child: child,
         ),
       ),
     );
