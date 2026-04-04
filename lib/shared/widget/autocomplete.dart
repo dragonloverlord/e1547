@@ -121,30 +121,24 @@ class AutocompleteCutout extends ShapeBorder {
 
   @override
   Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
-    const shape = CircularNotchedRectangle();
-
-    Size size = rect.size;
     double edgeDistance = 16;
     double padding = 2;
     double offset = 4;
     double width = 56;
-    double radius = width / 2;
+    double radius = width / 2 + padding;
 
-    return shape
-        .getOuterPath(
-          rect,
-          Rect.fromCircle(
-            center: Offset(size.width - radius - edgeDistance, 0),
-            radius: radius + padding,
-          ),
-        )
-        .transform(
-          (Matrix4.diagonal3Values(
-            1,
-            -1,
-            1,
-          )..translateByDouble(0, -size.height - offset, 0, 0)).storage,
-        );
+    final rectPath = Path()..addRect(rect);
+    final notchPath = Path()..addOval(
+      Rect.fromCircle(
+        center: Offset(
+          rect.right - radius - edgeDistance + padding,
+          rect.bottom + offset,
+        ),
+        radius: radius,
+      ),
+    );
+
+    return Path.combine(PathOperation.difference, rectPath, notchPath);
   }
 
   @override
