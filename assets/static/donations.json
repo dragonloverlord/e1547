@@ -11,6 +11,24 @@
       {
         "amount": 3.0,
         "currency": "USD",
+        "date": "2026-05-07T11:55:00",
+        "platform": "ko-fi"
+      },
+      {
+        "amount": 3.0,
+        "currency": "USD",
+        "date": "2026-04-07T12:26:00",
+        "platform": "ko-fi"
+      },
+      {
+        "amount": 3.0,
+        "currency": "USD",
+        "date": "2026-03-07T11:04:00",
+        "platform": "ko-fi"
+      },
+      {
+        "amount": 3.0,
+        "currency": "USD",
         "date": "2026-02-07T09:21:00",
         "platform": "ko-fi"
       },
@@ -371,6 +389,12 @@
         "amount": 3.0,
         "currency": "USD",
         "date": "2024-07-15T06:50:00",
+        "platform": "ko-fi"
+      },
+      {
+        "amount": 3.0,
+        "currency": "USD",
+        "date": "2022-05-14T02:07:00",
         "platform": "ko-fi"
       }
     ]
