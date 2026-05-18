@@ -86,9 +86,9 @@ jobs:
 
       - name: package release
         run: |
-          mv build/app/outputs/flutter-apk/app-universal-release.apk app-universal-release.apk
-          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk app-arm64-v8a-release.apk
-          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk app-armeabi-v7a-release.apk
+          mv build/app/outputs/apk/release/app-universal-release.apk app-universal-release.apk
+          mv build/app/outputs/apk/release/app-arm64-v8a-release.apk app-arm64-v8a-release.apk
+          mv build/app/outputs/apk/release/app-armeabi-v7a-release.apk app-armeabi-v7a-release.apk
           mv build/app/outputs/bundle/release/app-release.aab app-release.aab
 
       - name: upload Universal APK to artifacts

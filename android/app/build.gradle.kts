@@ -58,9 +58,16 @@ android {
         }
     }
 
+    // Splits and AAB builds are mutually exclusive in AGP 8 (the bundle
+    // task chokes on per-ABI shrunk-resources outputs). Enable splits
+    // only when the gradle invocation is building APKs, not bundles.
+    // See https://issuetracker.google.com/402800800
+    val buildingBundle = gradle.startParameter.taskNames.any {
+        it.contains("bundle", ignoreCase = true)
+    }
     splits {
         abi {
-            isEnable = true
+            isEnable = !buildingBundle
             reset()
             include("arm64-v8a", "armeabi-v7a")
             isUniversalApk = true
