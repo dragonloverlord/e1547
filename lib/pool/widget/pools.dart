@@ -52,42 +52,39 @@ class _PoolsPageState extends State<PoolsPage> with RouterDrawerEntryWidget {
               valueListenable: context.watch<Settings>().tileSize,
               builder: (context, value, child) =>
                   TileLayout(tileSize: value, child: child!),
-              child: PullToRefresh(
-                onRefresh: () =>
-                    controller.refresh(force: true, background: true),
-                child: ListenableBuilder(
-                  listenable: controller,
-                  builder: (context, _) =>
-                      PagedMasonryGridView<int, Pool>.count(
-                        primary: true,
-                        showNewPageProgressIndicatorAsGridChild: false,
-                        showNewPageErrorIndicatorAsGridChild: false,
-                        showNoMoreItemsIndicatorAsGridChild: false,
-                        padding: defaultListPadding,
-                        state: controller.state,
-                        fetchNextPage: controller.getNextPage,
-                        crossAxisCount:
-                            (TileLayout.of(context).crossAxisCount * 0.5)
-                                .round(),
-                        builderDelegate: defaultPagedChildBuilderDelegate<Pool>(
-                          onRetry: controller.getNextPage,
-                          itemBuilder: (context, item, index) =>
-                              ImageCacheSizeProvider(
-                                size: TileLayout.of(context).tileSize * 4,
-                                child: PoolTile(
-                                  pool: item,
-                                  onPressed: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          PoolPage(pool: item),
-                                    ),
-                                  ),
+              child: ListenableBuilder(
+                listenable: controller,
+                builder: (context, _) => PullToRefresh(
+                  onRefresh: () =>
+                      controller.refresh(force: true, background: true),
+                  child: PagedMasonryGridView<int, Pool>.count(
+                    primary: true,
+                    showNewPageProgressIndicatorAsGridChild: false,
+                    showNewPageErrorIndicatorAsGridChild: false,
+                    showNoMoreItemsIndicatorAsGridChild: false,
+                    padding: defaultListPadding,
+                    state: controller.state,
+                    fetchNextPage: controller.getNextPage,
+                    crossAxisCount:
+                        (TileLayout.of(context).crossAxisCount * 0.5).round(),
+                    builderDelegate: defaultPagedChildBuilderDelegate<Pool>(
+                      onRetry: controller.getNextPage,
+                      itemBuilder: (context, item, index) =>
+                          ImageCacheSizeProvider(
+                            size: TileLayout.of(context).tileSize * 4,
+                            child: PoolTile(
+                              pool: item,
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => PoolPage(pool: item),
                                 ),
                               ),
-                          onEmpty: const Text('No pools'),
-                          onError: const Text('Failed to load pools'),
-                        ),
-                      ),
+                            ),
+                          ),
+                      onEmpty: const Text('No pools'),
+                      onError: const Text('Failed to load pools'),
+                    ),
+                  ),
                 ),
               ),
             ),
