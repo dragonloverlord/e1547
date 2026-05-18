@@ -4,10 +4,6 @@
 // is a thin wrapper that calls [runFixtures] with its category name. The
 // runner loads `fixtures/<category>.json`, iterates entries, and asserts
 // that the Dart parser's canonical JSON output equals the frozen expected.
-//
-// This file survives commit 2. It does NOT depend on `_bridge/`, `_compare/`,
-// or `_bench/` so plain `flutter test test/markup/conformance/` works after
-// the dev harness is deleted.
 
 import 'dart:convert';
 import 'dart:io';
@@ -41,8 +37,8 @@ class ConformanceFixture {
   /// The canonical AST tree (Map / List / scalar) the parser must produce,
   /// frozen at corpus distillation time from the dmark proxy oracle's
   /// `parseDTextToAST`. May be `null` for entries that have not been
-  /// regenerated yet; such entries fail loudly so the corpus author is
-  /// forced to run regenerate.sh.
+  /// regenerated yet; such entries fail loudly so the corpus author knows
+  /// the fixture is incomplete.
   final Object? expected;
 }
 
@@ -67,7 +63,7 @@ void runFixtures(String category) {
         if (f.expected == null) {
           fail(
             'fixture "${f.label}" in $category.json has no frozen expected '
-            'value; run test/markup/regenerate.sh to populate it',
+            'value',
           );
         }
         final ast = _parseToJson(f.input);

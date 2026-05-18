@@ -1,9 +1,0 @@
-{
-  "name": "e1547-dmark-bridge",
-  "private": true,
-  "type": "module",
-  "description": "Dev-only Node bridge: pipes dtext inputs through dmark.parseDTextToAST so the Dart conformance harness can diff against the proxy oracle for e621ng/dtext. Deleted in commit 2.",
-  "dependencies": {
-    "dmark": "file:../../../../dmark"
-  }
-}
