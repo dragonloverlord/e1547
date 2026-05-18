@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+/// Resolves a CSS color string to a [Color]. Accepts `#RGB` / `#RRGGBB`
+/// hex codes and CSS named colors (case-insensitive, both `gray` and
+/// `grey` spellings).
 Color? parseColor(String colorString) {
   if (RegExp(r'^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$').hasMatch(colorString)) {
     if (colorString.length == 7) {
@@ -14,7 +17,7 @@ Color? parseColor(String colorString) {
     }
   }
 
-  return HtmlColors.values.asNameMap()[colorString]?.value;
+  return HtmlColors.lookup(colorString)?.value;
 }
 
 enum HtmlColors {
@@ -68,6 +71,7 @@ enum HtmlColors {
   cornsilk(Color(0xFFFFF8DC)),
   indigo(Color(0xFF4B0082)),
   purple(Color(0xFF800080)),
+  rebeccaPurple(Color(0xFF663399)),
   darkMagenta(Color(0xFF8B008B)),
   darkViolet(Color(0xFF9400D3)),
   darkSlateBlue(Color(0xFF483D8B)),
@@ -131,6 +135,7 @@ enum HtmlColors {
   lightGreen(Color(0xFF90EE90)),
   greenYellow(Color(0xFFADFF2F)),
   paleGreen(Color(0xFF98FB98)),
+  white(Color(0xFFFFFFFF)),
   snow(Color(0xFFFFFAFA)),
   honeydew(Color(0xFFF0FFF0)),
   mintCream(Color(0xFFF5FFFA)),
@@ -148,7 +153,7 @@ enum HtmlColors {
   lavenderBlush(Color(0xFFFFF0F5)),
   mistyRose(Color(0xFFFFE4E1)),
   gainsboro(Color(0xFFDCDCDC)),
-  lightGrey(Color(0xFFD3D3D3)),
+  lightGray(Color(0xFFD3D3D3)),
   silver(Color(0xFFC0C0C0)),
   darkGray(Color(0xFFA9A9A9)),
   gray(Color(0xFF808080)),
@@ -161,4 +166,25 @@ enum HtmlColors {
   const HtmlColors(this.value);
 
   final Color value;
+
+  static final Map<String, HtmlColors> _byCssName = _buildIndex();
+
+  static Map<String, HtmlColors> _buildIndex() {
+    final map = <String, HtmlColors>{
+      for (final c in values) c.name.toLowerCase(): c,
+    };
+    // CSS spells these grey variants both ways.
+    map['grey'] = HtmlColors.gray;
+    map['darkgrey'] = HtmlColors.darkGray;
+    map['dimgrey'] = HtmlColors.dimGray;
+    map['lightgrey'] = HtmlColors.lightGray;
+    map['slategrey'] = HtmlColors.slateGray;
+    map['lightslategrey'] = HtmlColors.lightSlateGray;
+    map['darkslategrey'] = HtmlColors.darkSlateGray;
+    return map;
+  }
+
+  /// Case-insensitive lookup by CSS color name. Returns `null` if the
+  /// string is not a known named color.
+  static HtmlColors? lookup(String name) => _byCssName[name.toLowerCase()];
 }
