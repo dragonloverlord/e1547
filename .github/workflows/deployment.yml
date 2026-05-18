@@ -19,20 +19,25 @@ on:
         description: "Release title"
         type: string
         required: false
+      dry_run:
+        description: "Build and validate without publishing"
+        type: boolean
+        default: false
 
 env:
   VERSION_BUMP: ${{ github.event.inputs.version }}
   RELEASE_TITLE: ${{ github.event.inputs.release_title }}
+  DRY_RUN: ${{ github.event.inputs.dry_run }}
 
 jobs:
   android-build:
     runs-on: ubuntu-latest
     steps:
       - name: setup actions
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: "adopt"
           java-version: "17"
@@ -49,7 +54,7 @@ jobs:
           cache: true
 
       - name: cache flutter dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.PUB_CACHE }}
           key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
@@ -87,25 +92,25 @@ jobs:
           mv build/app/outputs/bundle/release/app-release.aab app-release.aab
 
       - name: upload Universal APK to artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-apk-universal
           path: app-universal-release.apk
 
       - name: upload ARM64 APK to artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-apk-arm64
           path: app-arm64-v8a-release.apk
 
       - name: upload ARMv7 APK to artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-apk-armv7
           path: app-armeabi-v7a-release.apk
 
       - name: upload AAB to artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-aab
           path: app-release.aab
@@ -114,7 +119,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: setup actions
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: parse flutter version
         run: |
@@ -128,7 +133,7 @@ jobs:
           cache: true
 
       - name: cache flutter dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.PUB_CACHE }}
           key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
@@ -155,7 +160,7 @@ jobs:
           mv Runner.zip ../../../Runner.ipa
 
       - name: upload IPA to artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-ios
           path: Runner.ipa
@@ -166,7 +171,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup actions
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: setup ruby
         uses: ruby/setup-ruby@v1
@@ -206,6 +211,7 @@ jobs:
         run: bundle exec fastlane android changelog
 
       - name: commit version increase
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         uses: EndBug/add-and-commit@v9
         with:
           message: increased version
@@ -216,27 +222,27 @@ jobs:
             fastlane
 
       - name: download Universal APK from artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-apk-universal
 
       - name: download ARM64 APK from artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-apk-arm64
 
       - name: download ARMv7 APK from artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-apk-armv7
 
       - name: download AAB from artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-aab
 
       - name: download IPA from artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-ios
 
@@ -257,9 +263,10 @@ jobs:
           echo "$KEYSTORE" > android/keys/playstore.json
 
       - name: publish to Play Store
-        run: bundle exec fastlane android upload
+        run: bundle exec fastlane android upload validate_only:${{ github.event.inputs.dry_run }}
 
       - name: create release
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -275,18 +282,18 @@ jobs:
 
   forum-publish:
     needs: [release]
-    if: ${{ github.ref == 'refs/heads/master' && github.event.inputs.version != 'none' }}
+    if: ${{ github.ref == 'refs/heads/master' && github.event.inputs.version != 'none' && github.event.inputs.dry_run != 'true' }}
     runs-on: ubuntu-latest
     env:
       DMARK_VERSION: '0.0.6'
     steps:
       - name: setup actions
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: master
 
       - name: setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
 
