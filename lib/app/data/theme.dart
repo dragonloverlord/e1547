@@ -158,4 +158,3 @@ class AndroidStretchScrollBehaviour extends ScrollBehavior {
     return super.buildOverscrollIndicator(context, child, details);
   }
 }
-
