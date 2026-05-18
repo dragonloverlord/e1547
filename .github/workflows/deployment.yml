@@ -278,7 +278,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/master' && github.event.inputs.version != 'none' }}
     runs-on: ubuntu-latest
     env:
-      DMARK_VERSION: '0.0.5'
+      DMARK_VERSION: '0.0.6'
     steps:
       - name: setup actions
         uses: actions/checkout@v4
