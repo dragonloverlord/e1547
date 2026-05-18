@@ -22,6 +22,7 @@ Future<void> initializeAppInfo() => AppInfo.initializePlatform(
   website: 'e1547.clynamic.net',
   kofi: 'binaryfloof',
   email: 'support@clynamic.net',
+  forumTopicId: 25854,
 );
 
 Future<String> getTemporaryAppDirectory() => getTemporaryDirectory().then(

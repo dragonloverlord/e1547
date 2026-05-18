@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:e1547/app/app.dart';
 import 'package:e1547/settings/settings.dart';
 import 'package:e1547/shared/shared.dart';
+import 'package:e1547/topic/topic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sub/flutter_sub.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -302,6 +303,17 @@ class AboutLinks extends StatelessWidget {
           link: 'https://discord.gg/',
           extra: appInfo.discord,
         ),
+        if (appInfo.forumTopicId != null)
+          ListTile(
+            leading: const FaIcon(FontAwesomeIcons.comments),
+            title: const Text('Forum'),
+            subtitle: Text('e621 thread #${appInfo.forumTopicId}'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => TopicLoadingPage(appInfo.forumTopicId!),
+              ),
+            ),
+          ),
         if (appInfo.website != null)
           linkListTile(
             leading: const FaIcon(FontAwesomeIcons.house),
