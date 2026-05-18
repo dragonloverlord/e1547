@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- Linux as a build target
+- Database import and export
+- E621 forum thread link on the About page
+- History clear button
+
+### Changed
+- Improved DText rendering speed
+- Simplified history display
+
+### Fixed
+- Editing post sources
+- User blocking
+- Follow and history thumbnails
+- Forum history links
+
+### Removed
+- "order:new" search shortcut
+- Funding options
+
 ## [20.2.0+98] - 2025-06-07
 ### Added
 - support for tag group searches
