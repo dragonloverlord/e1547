@@ -272,3 +272,109 @@ jobs:
             e1547-arm64.apk
             e1547-armv7.apk
             e1547.ipa
+
+  forum-publish:
+    needs: [release]
+    if: ${{ github.ref == 'refs/heads/master' && github.event.inputs.version != 'none' }}
+    runs-on: ubuntu-latest
+    env:
+      DMARK_VERSION: '0.0.5'
+    steps:
+      - name: setup actions
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: setup dart
+        uses: dart-lang/setup-dart@v1
+
+      - name: setup cider
+        run: dart pub global activate cider
+
+      - name: extract release metadata
+        id: meta
+        run: |
+          VERSION=$(cider version)
+          BUILD_NUMBER=${VERSION#*+}
+          TOPIC_ID=$(grep -oP "forumTopicId:\s*\K\d+" lib/app/data/initialize.dart)
+          GITHUB_SLUG=$(grep -oP "github:\s*'\K[^']+" lib/app/data/initialize.dart)
+          DISCORD_INVITE=$(grep -oP "discord:\s*'\K[^']+" lib/app/data/initialize.dart)
+          DEVELOPER=$(grep -oP "developer:\s*'\K[^']+" lib/app/data/initialize.dart)
+          PACKAGE_NAME=$(grep -oP 'applicationId\s*=\s*"\K[^"]+' android/app/build.gradle.kts)
+          {
+            echo "version=$VERSION"
+            echo "build_number=$BUILD_NUMBER"
+            echo "topic_id=$TOPIC_ID"
+            echo "github_slug=$GITHUB_SLUG"
+            echo "discord_invite=$DISCORD_INVITE"
+            echo "developer=$DEVELOPER"
+            echo "package_name=$PACKAGE_NAME"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: extract version changelog markdown
+        run: |
+          cider describe --only-body "${{ steps.meta.outputs.version }}" \
+            > version_changelog.md
+
+      - name: download dmark
+        run: |
+          curl -fsSL \
+            "https://libs.cdn.clynamic.net/dmark/${DMARK_VERSION}/dmark.js" \
+            -o dmark.mjs
+
+      - name: convert markdown to dtext
+        run: |
+          cat > convert.mjs <<'EOF'
+          import { parseMarkdown, formatDText } from './dmark.mjs';
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const md = readFileSync('version_changelog.md', 'utf8');
+          const parsed = parseMarkdown(md);
+          const out = formatDText(parsed.document);
+          writeFileSync('version_changelog.dtext', out.output);
+          EOF
+          node convert.mjs
+
+      - name: assemble forum post body
+        run: |
+          VERSION='${{ steps.meta.outputs.version }}'
+          PACKAGE_NAME='${{ steps.meta.outputs.package_name }}'
+          GITHUB_SLUG='${{ steps.meta.outputs.github_slug }}'
+          DISCORD_INVITE='${{ steps.meta.outputs.discord_invite }}'
+          {
+            echo "h1. Version $VERSION"
+            echo ""
+            echo "[section,expanded=Changes]"
+            cat version_changelog.dtext
+            echo "[/section]"
+            echo ""
+            echo "[section,expanded=Download]"
+            echo "You can download the app in the [b]\"Playstore\":https://play.google.com/store/apps/details?id=$PACKAGE_NAME [/b]"
+            echo "or get your own copy from the [b]\"Github releases\":https://github.com/$GITHUB_SLUG/releases [/b]."
+            echo "[/section]"
+            echo ""
+            echo "[section,expanded=Community]"
+            echo "If you have feature suggestions or bugs, join us on the \"discord server\":https://discord.gg/$DISCORD_INVITE "
+            echo "[/section]"
+            echo ""
+            echo "Regards."
+          } > body.dtext
+
+      - name: post to e621 forum
+        env:
+          E621_FORUM_USER: ${{ secrets.E621_FORUM_USER }}
+          E621_FORUM_API_KEY: ${{ secrets.E621_FORUM_API_KEY }}
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg body "$(cat body.dtext)" \
+            --argjson topic_id ${{ steps.meta.outputs.topic_id }} \
+            '{forum_post: {topic_id: $topic_id, body: $body}}')
+          curl -fsS -X POST 'https://e621.net/forum_posts.json' \
+            -u "$E621_FORUM_USER:$E621_FORUM_API_KEY" \
+            -H "User-Agent: e1547/${{ steps.meta.outputs.version }} (${{ steps.meta.outputs.developer }})" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD"
