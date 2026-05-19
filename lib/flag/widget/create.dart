@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:e1547/client/client.dart';
 import 'package:e1547/flag/flag.dart';
 import 'package:e1547/markup/markup.dart';
