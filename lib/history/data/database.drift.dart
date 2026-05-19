@@ -879,6 +879,27 @@ mixin $HistoryRepositoryMixin on i0.DatabaseAccessor<i1.GeneratedDatabase> {
       ).resultSet<i2.$HistoriesIdentitiesTableTable>(
         'histories_identities_table',
       );
+  HistoryRepositoryManager get managers => HistoryRepositoryManager(this);
+}
+
+class HistoryRepositoryManager {
+  final $HistoryRepositoryMixin _db;
+  HistoryRepositoryManager(this._db);
+  i2.$$HistoriesTableTableTableManager get historiesTable =>
+      i2.$$HistoriesTableTableTableManager(
+        _db.attachedDatabase,
+        _db.historiesTable,
+      );
+  i4.$$IdentitiesTableTableTableManager get identitiesTable =>
+      i4.$$IdentitiesTableTableTableManager(
+        _db.attachedDatabase,
+        _db.identitiesTable,
+      );
+  i2.$$HistoriesIdentitiesTableTableTableManager get historiesIdentitiesTable =>
+      i2.$$HistoriesIdentitiesTableTableTableManager(
+        _db.attachedDatabase,
+        _db.historiesIdentitiesTable,
+      );
 }
 
 class $HistoriesTableTable extends i6.HistoriesTable
@@ -1037,7 +1058,7 @@ class $HistoriesTableTable extends i6.HistoriesTable
   @override
   i5.History map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return i5.History.new(
+    return i5.History(
       id: attachedDatabase.typeMapping.read(
         i0.DriftSqlType.int,
         data['${effectivePrefix}id'],

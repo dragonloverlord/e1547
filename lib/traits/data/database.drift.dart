@@ -425,6 +425,19 @@ mixin $TraitsRepositoryMixin on i0.DatabaseAccessor<i1.GeneratedDatabase> {
   i4.$TraitsTableTable get traitsTable => i3.ReadDatabaseContainer(
     attachedDatabase,
   ).resultSet<i4.$TraitsTableTable>('traits_table');
+  TraitsRepositoryManager get managers => TraitsRepositoryManager(this);
+}
+
+class TraitsRepositoryManager {
+  final $TraitsRepositoryMixin _db;
+  TraitsRepositoryManager(this._db);
+  i2.$$IdentitiesTableTableTableManager get identitiesTable =>
+      i2.$$IdentitiesTableTableTableManager(
+        _db.attachedDatabase,
+        _db.identitiesTable,
+      );
+  i4.$$TraitsTableTableTableManager get traitsTable =>
+      i4.$$TraitsTableTableTableManager(_db.attachedDatabase, _db.traitsTable);
 }
 
 class $TraitsTableTable extends i6.TraitsTable
@@ -603,7 +616,7 @@ class $TraitsTableTable extends i6.TraitsTable
   @override
   i5.Traits map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return i5.Traits.new(
+    return i5.Traits(
       id: attachedDatabase.typeMapping.read(
         i0.DriftSqlType.int,
         data['${effectivePrefix}id'],

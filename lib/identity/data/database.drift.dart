@@ -206,6 +206,17 @@ mixin $IdentityRepositoryMixin on i0.DatabaseAccessor<i1.GeneratedDatabase> {
   i2.$IdentitiesTableTable get identitiesTable => i3.ReadDatabaseContainer(
     attachedDatabase,
   ).resultSet<i2.$IdentitiesTableTable>('identities_table');
+  IdentityRepositoryManager get managers => IdentityRepositoryManager(this);
+}
+
+class IdentityRepositoryManager {
+  final $IdentityRepositoryMixin _db;
+  IdentityRepositoryManager(this._db);
+  i2.$$IdentitiesTableTableTableManager get identitiesTable =>
+      i2.$$IdentitiesTableTableTableManager(
+        _db.attachedDatabase,
+        _db.identitiesTable,
+      );
 }
 
 class $IdentitiesTableTable extends i5.IdentitiesTable
@@ -296,7 +307,7 @@ class $IdentitiesTableTable extends i5.IdentitiesTable
   @override
   i4.Identity map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return i4.Identity.new(
+    return i4.Identity(
       id: attachedDatabase.typeMapping.read(
         i0.DriftSqlType.int,
         data['${effectivePrefix}id'],
