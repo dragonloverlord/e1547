@@ -219,6 +219,14 @@ jobs:
       - name: write playstore changelogs
         run: bundle exec fastlane android changelog
 
+      - name: verify changelog body is non-empty
+        run: |
+          file="./fastlane/metadata/android/en-US/changelogs/${{ env.BUILD_NUMBER }}.txt"
+          if [ ! -s "$file" ] || ! grep -q '[^[:space:]]' "$file"; then
+            echo "::error::$file is empty"
+            exit 1
+          fi
+
       - name: commit version increase
         if: ${{ github.event.inputs.dry_run != 'true' }}
         uses: EndBug/add-and-commit@v9
@@ -337,6 +345,13 @@ jobs:
         run: |
           cider describe --only-body "${{ steps.meta.outputs.version }}" \
             > version_changelog.md
+
+      - name: verify changelog body is non-empty
+        run: |
+          if [ ! -s version_changelog.md ] || ! grep -q '[^[:space:]]' version_changelog.md; then
+            echo "::error::version_changelog.md is empty"
+            exit 1
+          fi
 
       - name: download dmark
         run: |
