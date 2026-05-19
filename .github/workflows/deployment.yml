@@ -170,8 +170,17 @@ jobs:
     if: ${{ github.ref == 'refs/heads/master' && github.event.inputs.version != 'none' }}
     runs-on: ubuntu-latest
     steps:
+      - name: mint publisher token
+        id: publisher
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.PUBLISHER_APP_ID }}
+          private-key: ${{ secrets.PUBLISHER_PRIVATE_KEY }}
+
       - name: setup actions
         uses: actions/checkout@v6
+        with:
+          token: ${{ steps.publisher.outputs.token }}
 
       - name: setup ruby
         uses: ruby/setup-ruby@v1
@@ -216,6 +225,7 @@ jobs:
         with:
           message: increased version
           default_author: github_actions
+          github_token: ${{ steps.publisher.outputs.token }}
           add: |
             pubspec.yaml
             CHANGELOG.md
@@ -269,7 +279,7 @@ jobs:
         if: ${{ github.event.inputs.dry_run != 'true' }}
         uses: softprops/action-gh-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.publisher.outputs.token }}
         with:
           tag_name: ${{ env.VERSION }}
           name: ${{ env.RELEASE_TITLE }}
