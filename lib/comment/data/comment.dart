@@ -14,12 +14,25 @@ abstract class Comment with _$Comment {
     required DateTime updatedAt,
     required int creatorId,
     required String creatorName,
-    required VoteInfo? vote,
+    required int score,
+    required int? vote,
     required WarningType? warning,
     required bool hidden,
   }) = _Comment;
 
   factory Comment.fromJson(dynamic json) => _$CommentFromJson(json);
+}
+
+extension CommentVoting on Comment {
+  Comment withVote({required bool upvote, required bool replace}) {
+    final result = applyVote(
+      score: score,
+      vote: vote,
+      upvote: upvote,
+      replace: replace,
+    );
+    return copyWith(score: result.score, vote: result.vote);
+  }
 }
 
 @JsonEnum()

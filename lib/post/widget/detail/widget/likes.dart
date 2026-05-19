@@ -22,8 +22,8 @@ class LikeDisplay extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             VoteDisplay(
-              status: post.vote.status,
-              score: post.vote.score,
+              vote: post.vote,
+              score: post.score,
               onUpvote: canVote
                   ? (isLiked) async {
                       controller

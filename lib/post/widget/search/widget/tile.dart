@@ -149,18 +149,18 @@ class PostInfoBar extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(post.vote.score.toString()),
+                        Text(post.score.toString()),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           child: Icon(
-                            post.vote.score >= 0
+                            post.score >= 0
                                 ? Icons.arrow_upward
                                 : Icons.arrow_downward,
-                            color: {
-                              VoteStatus.upvoted: Colors.deepOrange,
-                              VoteStatus.downvoted: Colors.blue,
-                              VoteStatus.unknown: null,
-                            }[post.vote.status],
+                            color: switch (post.vote) {
+                              1 => Colors.deepOrange,
+                              -1 => Colors.blue,
+                              _ => null,
+                            },
                           ),
                         ),
                       ],
@@ -301,8 +301,8 @@ class PostFeedTile extends StatelessWidget {
               ],
             ),
             VoteDisplay(
-              status: post.vote.status,
-              score: post.vote.score,
+              vote: post.vote,
+              score: post.score,
               onUpvote: (isLiked) async {
                 PostController controller = context.read<PostController>();
                 ScaffoldMessengerState messenger = ScaffoldMessenger.of(

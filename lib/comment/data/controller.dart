@@ -53,9 +53,7 @@ class CommentController extends PageClientDataController<Comment> {
     required bool replace,
   }) async {
     assertOwnsItem(comment);
-    replaceComment(
-      comment.copyWith(vote: comment.vote?.withVote(upvote, replace)),
-    );
+    replaceComment(comment.withVote(upvote: upvote, replace: replace));
     try {
       await client.comments.vote(
         id: comment.id,

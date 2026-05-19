@@ -1,6 +1,5 @@
 import 'package:deep_pick/deep_pick.dart';
 import 'package:e1547/post/post.dart';
-import 'package:e1547/shared/shared.dart';
 
 abstract final class E621Post {
   static Post fromJson(dynamic json) => pick(json).letOrThrow(
@@ -43,9 +42,8 @@ abstract final class E621Post {
       uploaderId: post('uploader_id').asIntOrThrow(),
       createdAt: post('created_at').asDateTimeOrThrow(),
       updatedAt: post('updated_at').asDateTimeOrNull(),
-      vote: VoteInfo(
-        score: post('score').letOrThrow((pick) => pick('total').asIntOrThrow()),
-      ),
+      score: post('score').letOrThrow((pick) => pick('total').asIntOrThrow()),
+      vote: null,
       isDeleted: post(
         'flags',
       ).letOrThrow((pick) => pick('deleted').asBoolOrThrow()),

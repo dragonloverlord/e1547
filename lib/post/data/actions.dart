@@ -38,7 +38,7 @@ extension PostTagging on Post {
         case 'score':
           NumberRange? range = NumberRange.tryParse(value);
           if (range == null) return false;
-          return range.has(vote.score);
+          return range.has(score);
         case 'favcount':
           NumberRange? range = NumberRange.tryParse(value);
           if (range == null) return false;
@@ -204,6 +204,18 @@ extension PostLinking on Post {
   String get link => getPostLink(id);
 }
 
+extension PostVoting on Post {
+  Post withVote({required bool upvote, required bool replace}) {
+    final result = applyVote(
+      score: score,
+      vote: vote,
+      upvote: upvote,
+      replace: replace,
+    );
+    return copyWith(score: result.score, vote: result.vote);
+  }
+}
+
 mixin PostActionController<KeyType> on ClientDataController<KeyType, Post> {
   Post? postById(int id) {
     int index = rawItems?.indexWhere((e) => e.id == id) ?? -1;
@@ -252,7 +264,7 @@ mixin PostActionController<KeyType> on ClientDataController<KeyType, Post> {
     required bool replace,
   }) async {
     assertOwnsItem(post);
-    post = post.copyWith(vote: post.vote.withVote(upvote, replace));
+    post = post.withVote(upvote: upvote, replace: replace);
     replacePost(post);
     try {
       await client.posts.vote(post.id, upvote, replace);

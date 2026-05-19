@@ -27,7 +27,8 @@ _Post _$PostFromJson(Map<String, dynamic> json) => _Post(
   updatedAt: json['updated_at'] == null
       ? null
       : DateTime.parse(json['updated_at'] as String),
-  vote: VoteInfo.fromJson(json['vote'] as Map<String, dynamic>),
+  score: (json['score'] as num).toInt(),
+  vote: (json['vote'] as num?)?.toInt(),
   isDeleted: json['is_deleted'] as bool,
   rating: $enumDecode(_$RatingEnumMap, json['rating']),
   favCount: (json['fav_count'] as num).toInt(),
@@ -55,6 +56,7 @@ Map<String, dynamic> _$PostToJson(_Post instance) => <String, dynamic>{
   'uploader_id': instance.uploaderId,
   'created_at': instance.createdAt.toIso8601String(),
   'updated_at': instance.updatedAt?.toIso8601String(),
+  'score': instance.score,
   'vote': instance.vote,
   'is_deleted': instance.isDeleted,
   'rating': _$RatingEnumMap[instance.rating]!,

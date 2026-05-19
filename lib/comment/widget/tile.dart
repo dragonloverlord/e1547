@@ -126,17 +126,14 @@ class CommentVotes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final client = context.watch<Client>();
-    VoteInfo? vote = comment.vote;
-    if (vote == null) return const SizedBox();
-
     final controller = context.read<CommentController>();
     final messenger = ScaffoldMessenger.of(context);
 
     return Dimmed(
       child: VoteDisplay(
         padding: EdgeInsets.zero,
-        score: vote.score,
-        status: vote.status,
+        score: comment.score,
+        vote: comment.vote,
         onUpvote: client.hasLogin
             ? (isLiked) async {
                 controller

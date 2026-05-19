@@ -1,4 +1,3 @@
-import 'package:e1547/shared/shared.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'post.freezed.dart';
@@ -20,7 +19,8 @@ abstract class Post with _$Post {
     required int uploaderId,
     required DateTime createdAt,
     required DateTime? updatedAt,
-    required VoteInfo vote,
+    required int score,
+    required int? vote,
     required bool isDeleted,
     required Rating rating,
     required int favCount,

@@ -14,9 +14,8 @@ _Comment _$CommentFromJson(Map<String, dynamic> json) => _Comment(
   updatedAt: DateTime.parse(json['updated_at'] as String),
   creatorId: (json['creator_id'] as num).toInt(),
   creatorName: json['creator_name'] as String,
-  vote: json['vote'] == null
-      ? null
-      : VoteInfo.fromJson(json['vote'] as Map<String, dynamic>),
+  score: (json['score'] as num).toInt(),
+  vote: (json['vote'] as num?)?.toInt(),
   warning: $enumDecodeNullable(_$WarningTypeEnumMap, json['warning']),
   hidden: json['hidden'] as bool,
 );
@@ -29,6 +28,7 @@ Map<String, dynamic> _$CommentToJson(_Comment instance) => <String, dynamic>{
   'updated_at': instance.updatedAt.toIso8601String(),
   'creator_id': instance.creatorId,
   'creator_name': instance.creatorName,
+  'score': instance.score,
   'vote': instance.vote,
   'warning': _$WarningTypeEnumMap[instance.warning],
   'hidden': instance.hidden,
