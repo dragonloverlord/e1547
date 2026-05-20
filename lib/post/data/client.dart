@@ -8,16 +8,20 @@ import 'package:e1547/pool/pool.dart';
 import 'package:e1547/post/post.dart';
 import 'package:e1547/shared/shared.dart';
 import 'package:e1547/tag/tag.dart';
+import 'package:e1547/traits/traits.dart';
+import 'package:flutter/foundation.dart';
 
 class PostClient {
   PostClient({
     required this.dio,
     required this.identity,
+    required this.traits,
     required this.poolsService,
   });
 
   final Dio dio;
   final Identity identity;
+  final ValueNotifier<Traits> traits;
   final PoolClient poolsService;
 
   Future<Post> get({required int id, bool? force, CancelToken? cancelToken}) =>
@@ -107,33 +111,34 @@ class PostClient {
 
   Future<List<Post>> byIds({
     required List<int> ids,
-    int? limit,
     bool? force,
     CancelToken? cancelToken,
   }) async {
-    limit = max(0, min(limit ?? 75, 100));
+    if (ids.isEmpty) return [];
+
+    // Server-side maximum id and page request size.
+    const int chunkSize = 320;
 
     List<List<int>> chunks = [];
-    for (int i = 0; i < ids.length; i += limit) {
-      chunks.add(ids.sublist(i, min(i + limit, ids.length)));
+    for (int i = 0; i < ids.length; i += chunkSize) {
+      chunks.add(ids.sublist(i, min(i + chunkSize, ids.length)));
     }
 
     List<Post> result = [];
     for (final chunk in chunks) {
-      if (chunk.isEmpty) continue;
       String filter = 'id:${chunk.join(',')}';
       List<Post> part = await page(
         query: {'tags': filter},
-        limit: limit,
+        limit: chunk.length,
         ordered: false,
         force: force,
         cancelToken: cancelToken,
       );
       Map<int, Post> table = {for (Post e in part) e.id: e};
-      part =
-          (chunk.map((e) => table[e]).toList()..removeWhere((e) => e == null))
-              .cast<Post>();
-      result.addAll(part);
+      result.addAll(
+        (chunk.map((e) => table[e]).toList()..removeWhere((e) => e == null))
+            .cast<Post>(),
+      );
     }
     return result;
   }
@@ -203,14 +208,12 @@ class PostClient {
   Future<List<Post>> byPool({
     required int id,
     int? page,
-    int? limit,
     bool orderByOldest = true,
     bool? force,
     CancelToken? cancelToken,
   }) async {
     page ??= 1;
-    // TODO: store per page count in Traits
-    int limit = 75;
+    int limit = traits.value.perPage ?? 75;
     Pool pool = await poolsService.get(
       id: id,
       force: force,
@@ -221,12 +224,7 @@ class PostClient {
     int lower = (page - 1) * limit;
     if (lower > ids.length) return [];
     ids = ids.sublist(lower).take(limit).toList();
-    return byIds(
-      ids: ids,
-      limit: limit,
-      force: force,
-      cancelToken: cancelToken,
-    );
+    return byIds(ids: ids, force: force, cancelToken: cancelToken);
   }
 
   Future<void> update(int postId, Map<String, String?> body) async {
