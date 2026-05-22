@@ -95,7 +95,7 @@ class TagClient {
       )
       .then(unwrapRailsArray)
       .then((response) {
-        return response.data
+        return (response.data as List)
             .cast<Map<String, dynamic>>()
             .where((e) => e['status'] != 'deleted')
             .map((e) => e['consequent_name'] as String?)
