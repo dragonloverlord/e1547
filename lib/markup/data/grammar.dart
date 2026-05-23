@@ -1052,6 +1052,7 @@ class DTextGrammar {
     final title = parts.$3;
     if (raw.isEmpty && title == null) return false;
     if (title != null && title.isEmpty) return false;
+    if (title != null && title.startsWith('|')) return false;
     return true;
   }).map((parts) {
     final raw = parts.$2;

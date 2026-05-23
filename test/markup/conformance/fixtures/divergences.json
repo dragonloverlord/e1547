@@ -92,8 +92,7 @@
       "type": "document"
     },
     "input": "see [[tag||Title]] here",
-    "label": "C. wiki link with empty tag side of '||' should be plain text",
-    "skip": "known divergence: _wikiLink accepts an empty section before '|' as a valid wiki link and renders '|Title' as link text; the reference rejects the construct and keeps the whole '[[tag||Title]]' literal as paragraph text"
+    "label": "C. wiki link with empty tag side of '||' should be plain text"
   },
   {
     "expected": {
