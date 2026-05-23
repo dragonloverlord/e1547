@@ -30,7 +30,9 @@ class DTextTableWidget extends StatelessWidget {
     visit(children, inHead: false);
     if (rows.isEmpty) return const SizedBox.shrink();
 
-    final columns = rows.map((r) => r.cells.length).reduce((a, b) => a > b ? a : b);
+    final columns = rows
+        .map((r) => r.cells.length)
+        .reduce((a, b) => a > b ? a : b);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Table(
@@ -52,8 +54,8 @@ class DTextTableWidget extends StatelessWidget {
                     child: i < row.cells.length
                         ? DTextInlineSpans(
                             children: row.cells[i].children,
-                            isHeader: row.cells[i].cellType ==
-                                DTextTableCellType.th,
+                            isHeader:
+                                row.cells[i].cellType == DTextTableCellType.th,
                           )
                         : const SizedBox.shrink(),
                   ),

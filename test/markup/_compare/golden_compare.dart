@@ -15,7 +15,6 @@
 // Dev-only.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:e1547/markup/data/grammar.dart';
@@ -27,12 +26,13 @@ import 'diff.dart';
 Future<void> main(List<String> args) async {
   final options = _parseOptions(args);
   final goldenDir = _resolveGoldenDir();
-  final files = goldenDir
-      .listSync()
-      .whereType<File>()
-      .where((f) => f.path.endsWith('.dtext'))
-      .toList()
-    ..sort((a, b) => a.path.compareTo(b.path));
+  final files =
+      goldenDir
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.dtext'))
+          .toList()
+        ..sort((a, b) => a.path.compareTo(b.path));
 
   var selected = files;
   if (options.only != null) {
@@ -63,7 +63,7 @@ Future<void> main(List<String> args) async {
       Object? dartTree;
       try {
         dartTree = grammar.parse(source).toJson();
-      } catch (e, st) {
+      } on Object catch (e, st) {
         crashDart++;
         stdout.writeln('CRASH-DART $name: $e');
         if (options.verbose) stdout.writeln(st);
@@ -76,7 +76,7 @@ Future<void> main(List<String> args) async {
       Object? dmarkTree;
       try {
         dmarkTree = await bridge.parse(source);
-      } catch (e) {
+      } on Object catch (e) {
         crashDmark++;
         stdout.writeln('CRASH-DMARK $name: $e');
         continue;
@@ -98,7 +98,7 @@ Future<void> main(List<String> args) async {
     await bridge.dispose();
   }
 
-  stdout.writeln('');
+  stdout.writeln();
   stdout.writeln('=== summary ===');
   stdout.writeln('pass:        $pass');
   stdout.writeln('diff:        $diff');
@@ -107,7 +107,7 @@ Future<void> main(List<String> args) async {
   stdout.writeln('total:       ${selected.length}');
 
   if (firstDiffs.isNotEmpty) {
-    stdout.writeln('');
+    stdout.writeln();
     stdout.writeln('=== first ${firstDiffs.length} failures ===');
     for (final f in firstDiffs) {
       stdout.writeln('${f.kind.padRight(12)} ${f.name}');

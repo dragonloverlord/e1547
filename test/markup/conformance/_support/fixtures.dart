@@ -70,29 +70,25 @@ void runFixtures(String category) {
   final fixtures = loadFixtures(category);
   group(category, () {
     for (final f in fixtures) {
-      test(
-        f.label,
-        () {
-          if (f.expected == null) {
-            fail(
-              'fixture "${f.label}" in $category.json has no frozen expected '
-              'value; run test/markup/regenerate.sh to populate it',
-            );
-          }
-          final ast = _parseToJson(f.input);
-          final expectedJson = canonicalize(f.expected);
-          final actualJson = canonicalize(ast);
-          if (actualJson != expectedJson) {
-            fail(
-              'AST mismatch for "${f.label}"\n'
-              '  input:    ${json.encode(f.input)}\n'
-              '  expected: $expectedJson\n'
-              '  actual:   $actualJson',
-            );
-          }
-        },
-        skip: f.skip,
-      );
+      test(f.label, () {
+        if (f.expected == null) {
+          fail(
+            'fixture "${f.label}" in $category.json has no frozen expected '
+            'value; run test/markup/regenerate.sh to populate it',
+          );
+        }
+        final ast = _parseToJson(f.input);
+        final expectedJson = canonicalize(f.expected);
+        final actualJson = canonicalize(ast);
+        if (actualJson != expectedJson) {
+          fail(
+            'AST mismatch for "${f.label}"\n'
+            '  input:    ${json.encode(f.input)}\n'
+            '  expected: $expectedJson\n'
+            '  actual:   $actualJson',
+          );
+        }
+      }, skip: f.skip);
     }
   });
 }

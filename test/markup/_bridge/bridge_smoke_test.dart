@@ -7,8 +7,8 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'bridge.dart';
 import '../conformance/_support/canonical.dart';
+import 'bridge.dart';
 
 void main() {
   late DmarkBridge bridge;
@@ -45,13 +45,13 @@ void main() {
     final results = await bridge.parseAll(inputs);
     expect(results.length, 50);
     for (final r in results) {
-      final m = r as Map<String, dynamic>;
+      final m = r! as Map<String, dynamic>;
       expect(m['type'], 'document');
     }
   });
 
   test('canonicalize is order-stable across map insertion order', () async {
-    final ast = await bridge.parse('[i]x[/i]') as Map<String, dynamic>;
+    final ast = (await bridge.parse('[i]x[/i]'))! as Map<String, dynamic>;
     // Reverse the map insertion order in a clone and ensure canonical equal.
     Map<String, Object?> reverseKeys(Map<String, dynamic> m) {
       final keys = m.keys.toList().reversed.toList();
@@ -62,9 +62,8 @@ void main() {
               : (m[k] is List
                     ? (m[k] as List)
                           .map(
-                            (e) => e is Map<String, dynamic>
-                                ? reverseKeys(e)
-                                : e,
+                            (e) =>
+                                e is Map<String, dynamic> ? reverseKeys(e) : e,
                           )
                           .toList()
                     : m[k]),

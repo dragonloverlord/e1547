@@ -573,8 +573,7 @@ final class DTextLink extends DTextInline {
     'linkType': linkType.jsonValue,
     'href': href,
     if (title != null) 'title': title,
-    if (children != null)
-      'children': children!.map((e) => e.toJson()).toList(),
+    if (children != null) 'children': children!.map((e) => e.toJson()).toList(),
     if (idType != null) 'idType': idType!.jsonValue,
     if (id != null) 'id': id,
     if (anchor != null) 'anchor': anchor,

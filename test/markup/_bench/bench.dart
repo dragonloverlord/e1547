@@ -32,7 +32,6 @@ import 'dart:io';
 
 import 'package:e1547/markup/data/grammar.dart';
 import 'package:petitparser/debug.dart';
-import 'package:petitparser/petitparser.dart';
 
 import '../_bridge/bridge.dart';
 import '../conformance/_support/canonical.dart';
@@ -75,7 +74,7 @@ Future<void> main(List<String> args) async {
   _report(dart, dmark);
 
   if (options.profile) {
-    stdout.writeln('');
+    stdout.writeln();
     stdout.writeln('=== petitparser profile (top hottest parsers) ===');
     _runProfile(inputs);
   }
@@ -95,7 +94,7 @@ void _runProfile(List<_Input> inputs) {
   for (final input in inputs) {
     try {
       profiled.parse(input.source);
-    } catch (_) {
+    } on Object catch (_) {
       // Skip crashing inputs; the aggregate signal is what we want.
     }
   }
@@ -213,7 +212,9 @@ List<_Input> _collectInputs(_Options options) {
   for (final relPath in _corpusFilesFor(options.corpus)) {
     final f = _resolveCorpusFile(relPath);
     if (f != null) {
-      inputs.add(_Input('corpus', f.uri.pathSegments.last, f.readAsStringSync()));
+      inputs.add(
+        _Input('corpus', f.uri.pathSegments.last, f.readAsStringSync()),
+      );
     }
   }
   return inputs;
@@ -286,7 +287,7 @@ _Bench _benchDart(List<_Input> inputs, int iterations) {
   for (final input in inputs) {
     try {
       grammar.parse(input.source);
-    } catch (_) {
+    } on Object catch (_) {
       // Keep going; some inputs may still crash.
     }
   }
@@ -301,16 +302,14 @@ _Bench _benchDart(List<_Input> inputs, int iterations) {
       final sw = Stopwatch()..start();
       try {
         grammar.parse(input.source);
-      } catch (_) {
+      } on Object catch (_) {
         crashed = true;
         break;
       }
       sw.stop();
       timings.add(sw.elapsedMicroseconds);
     }
-    final medianMicros = crashed
-        ? 0
-        : (timings..sort())[timings.length ~/ 2];
+    final medianMicros = crashed ? 0 : (timings..sort())[timings.length ~/ 2];
     samples.add(_Sample(input, medianMicros, crashed));
     if (!crashed) {
       totalBytes += input.bytes;
@@ -336,7 +335,7 @@ Future<_Bench> _benchDmark(List<_Input> inputs, int iterations) async {
         // is below noise for non-trivial inputs.
         final total = await bridge.measureMicros(input.source, iterations);
         perOpMicros = total ~/ iterations;
-      } catch (_) {
+      } on Object catch (_) {
         crashed = true;
       }
       samples.add(_Sample(input, perOpMicros, crashed));
@@ -352,7 +351,7 @@ Future<_Bench> _benchDmark(List<_Input> inputs, int iterations) async {
 }
 
 void _report(_Bench dart, _Bench? dmark) {
-  stdout.writeln('');
+  stdout.writeln();
   stdout.writeln('=== throughput ===');
   _printSummary(dart);
   if (dmark != null) {
@@ -365,7 +364,7 @@ void _report(_Bench dart, _Bench? dmark) {
     // are well above measurement jitter.
     if (dmark.totalParseMicros > 1000) {
       final ratio = dmark.mbPerSec / dart.mbPerSec;
-      stdout.writeln('');
+      stdout.writeln();
       if (ratio < 1.0) {
         stdout.writeln(
           'dart is ${(1 / ratio).toStringAsFixed(2)}x faster than dmark by MB/s',
@@ -376,7 +375,7 @@ void _report(_Bench dart, _Bench? dmark) {
         );
       }
       if (ratio > 10) {
-        stdout.writeln('');
+        stdout.writeln();
         stdout.writeln('### PERF ALERT ###');
         stdout.writeln(
           'PERF ALERT: dart parser is ${ratio.toStringAsFixed(1)}x slower than dmark',
@@ -384,12 +383,12 @@ void _report(_Bench dart, _Bench? dmark) {
         stdout.writeln(_slowestCategoriesReport(dart));
         stdout.writeln('### END ###');
       } else if (ratio > 2) {
-        stdout.writeln('');
+        stdout.writeln();
         stdout.writeln('over the 2x budget. tightening targets:');
         stdout.writeln(_slowestCategoriesReport(dart));
       }
     } else {
-      stdout.writeln('');
+      stdout.writeln();
       stdout.writeln(
         'dmark per-op median is below IPC noise floor '
         '(${dmark.medianMicrosPerOp.toStringAsFixed(0)}us). '
@@ -400,10 +399,10 @@ void _report(_Bench dart, _Bench? dmark) {
     stdout.writeln('(dmark skipped)');
   }
 
-  stdout.writeln('');
+  stdout.writeln();
   stdout.writeln('=== slowest categories (dart) ===');
   stdout.writeln(_slowestCategoriesReport(dart));
-  stdout.writeln('');
+  stdout.writeln();
   stdout.writeln('=== slowest individual inputs (dart, top 5) ===');
   final ranked = [...dart.samples.where((s) => !s.crashed)]
     ..sort((a, b) => b.medianMicros.compareTo(a.medianMicros));
@@ -420,7 +419,7 @@ void _report(_Bench dart, _Bench? dmark) {
     );
   }
   if (dart.crashCount > 0) {
-    stdout.writeln('');
+    stdout.writeln();
     stdout.writeln(
       'dart parser crashed on ${dart.crashCount} input(s); excluded from totals',
     );
@@ -451,8 +450,12 @@ String _slowestCategoriesReport(_Bench b) {
   }
   final ranked = byCategory.entries.toList()
     ..sort((a, b) {
-      final am = a.value.totalMicros / (a.value.totalBytes == 0 ? 1 : a.value.totalBytes);
-      final bm = b.value.totalMicros / (b.value.totalBytes == 0 ? 1 : b.value.totalBytes);
+      final am =
+          a.value.totalMicros /
+          (a.value.totalBytes == 0 ? 1 : a.value.totalBytes);
+      final bm =
+          b.value.totalMicros /
+          (b.value.totalBytes == 0 ? 1 : b.value.totalBytes);
       return bm.compareTo(am);
     });
   final out = StringBuffer();

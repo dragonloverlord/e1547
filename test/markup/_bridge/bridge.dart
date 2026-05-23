@@ -42,11 +42,9 @@ class DmarkBridge {
         'Run `yarn install` in ${cwd.path} first.',
       );
     }
-    final proc = await Process.start(
-      'node',
-      ['${cwd.path}/parse.mjs'],
-      workingDirectory: cwd.path,
-    );
+    final proc = await Process.start('node', [
+      '${cwd.path}/parse.mjs',
+    ], workingDirectory: cwd.path);
     final bridge = DmarkBridge._(proc);
     bridge._wire();
     return bridge;
@@ -120,7 +118,7 @@ class DmarkBridge {
       _proc.stdin.add(utf8.encode('EXIT\n'));
       await _proc.stdin.flush();
       await _proc.stdin.close();
-    } catch (_) {
+    } on Object catch (_) {
       // Node may have already exited; that is fine.
     }
     await _stdoutSub.cancel();
@@ -143,7 +141,7 @@ class DmarkBridge {
     Map<String, dynamic> frame;
     try {
       frame = json.decode(line) as Map<String, dynamic>;
-    } catch (_) {
+    } on Object catch (_) {
       stderr.writeln('[dmark-bridge] bad frame from node: $line');
       return;
     }

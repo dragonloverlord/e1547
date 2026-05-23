@@ -93,9 +93,9 @@ class DTextGrammar {
         children: [for (final b in children) _capBlockThumbs(b, counter)],
         color: color,
       ),
-      DTextSpoilerBlock(:final children) => DTextSpoilerBlock(
-        [for (final b in children) _capBlockThumbs(b, counter)],
-      ),
+      DTextSpoilerBlock(:final children) => DTextSpoilerBlock([
+        for (final b in children) _capBlockThumbs(b, counter),
+      ]),
       DTextSection(:final children, :final title, :final expanded) =>
         DTextSection(
           children: [for (final b in children) _capBlockThumbs(b, counter)],
@@ -109,9 +109,9 @@ class DTextGrammar {
             children: _capInlineThumbs(item.children, counter),
           ),
       ]),
-      DTextTable(:final children) => DTextTable(
-        [for (final c in children) _capTableChildThumbs(c, counter)],
-      ),
+      DTextTable(:final children) => DTextTable([
+        for (final c in children) _capTableChildThumbs(c, counter),
+      ]),
       DTextLTable(:final children, :final source) => DTextLTable(
         children: [for (final c in children) _capTableChildThumbs(c, counter)],
         source: source,
@@ -171,9 +171,9 @@ class DTextGrammar {
             ),
           );
         case DTextLink(
-              linkType: DTextLinkType.idLink,
-              idType: DTextIdType.thumb,
-            ):
+          linkType: DTextLinkType.idLink,
+          idType: DTextIdType.thumb,
+        ):
           counter[0]++;
           out.add(node);
         case DTextBold(:final children):
@@ -334,12 +334,9 @@ class DTextGrammar {
       char('.'),
       pattern(' \t').star(),
     ).toSequenceParser();
-    return (
-      headerOpen,
-      _withSingleNewlineStop(_inlineUntilNewline(inline)),
-    ).toSequenceParser().map(
-      (parts) => DTextHeader(level: parts.$1.$2, children: parts.$2),
-    );
+    return (headerOpen, _withSingleNewlineStop(_inlineUntilNewline(inline)))
+        .toSequenceParser()
+        .map((parts) => DTextHeader(level: parts.$1.$2, children: parts.$2));
   }
 
   Parser<T> _withSingleNewlineStop<T>(Parser<T> body) {
@@ -356,39 +353,42 @@ class DTextGrammar {
   Parser<List<DTextInline>> _inlineUntilNewline(
     SettableParser<DTextInline> inline,
   ) => inline
-      .starLazy([
-        char('\n'),
-        char('\r'),
-        _closingTagLookahead(),
-        endOfInput(),
-      ].toChoiceParser())
+      .starLazy(
+        [
+          char('\n'),
+          char('\r'),
+          _closingTagLookahead(),
+          endOfInput(),
+        ].toChoiceParser(),
+      )
       .map(_mergeAdjacentText);
 
-  Parser<DTextCodeBlock> _codeBlock() => (
-    _tagOpen('code'),
-    char('\n').optional(),
-    any().starLazy(_tagClose('code')).flatten(),
-    _tagClose('code'),
-  ).toSequenceParser().map((parts) {
-    // e621ng/dtext strips leading horizontal whitespace and any leading
-    // line break from code-block content, but keeps trailing whitespace.
-    // A code body that's nothing but whitespace collapses to an empty
-    // string.
-    final raw = parts.$3;
-    var start = 0;
-    while (start < raw.length) {
-      final c = raw.codeUnitAt(start);
-      if (c == 0x20 || c == 0x09) {
-        start++;
-      } else if (c == 0x0a || c == 0x0d) {
-        start++;
-      } else {
-        break;
-      }
-    }
-    final content = start == 0 ? raw : raw.substring(start);
-    return DTextCodeBlock(content);
-  });
+  Parser<DTextCodeBlock> _codeBlock() =>
+      (
+        _tagOpen('code'),
+        char('\n').optional(),
+        any().starLazy(_tagClose('code')).flatten(),
+        _tagClose('code'),
+      ).toSequenceParser().map((parts) {
+        // e621ng/dtext strips leading horizontal whitespace and any leading
+        // line break from code-block content, but keeps trailing whitespace.
+        // A code body that's nothing but whitespace collapses to an empty
+        // string.
+        final raw = parts.$3;
+        var start = 0;
+        while (start < raw.length) {
+          final c = raw.codeUnitAt(start);
+          if (c == 0x20 || c == 0x09) {
+            start++;
+          } else if (c == 0x0a || c == 0x0d) {
+            start++;
+          } else {
+            break;
+          }
+        }
+        final content = start == 0 ? raw : raw.substring(start);
+        return DTextCodeBlock(content);
+      });
 
   Parser<DTextQuote> _quoteBlock(SettableParser<DTextBlock> block) {
     final open = (
@@ -422,16 +422,19 @@ class DTextGrammar {
       pattern('^]').starString(),
       char(']'),
     ).toSequenceParser().map((parts) => (parts.$2, true));
-    final expandedNoTitle = (string('[section,expanded]', ignoreCase: true))
-        .map((_) => (null as String?, true));
+    final expandedNoTitle = (string(
+      '[section,expanded]',
+      ignoreCase: true,
+    )).map((_) => (null as String?, true));
     final titleOnly = (
       string('[section=', ignoreCase: true),
       pattern('^]').starString(),
       char(']'),
     ).toSequenceParser().map((parts) => (parts.$2 as String?, null as bool?));
-    final plain = (string('[section]', ignoreCase: true)).map(
-      (_) => (null as String?, null as bool?),
-    );
+    final plain = (string(
+      '[section]',
+      ignoreCase: true,
+    )).map((_) => (null as String?, null as bool?));
     final open = [
       expandedTitle.map((e) => (e.$1 as String?, e.$2 as bool?)),
       expandedNoTitle,
@@ -474,35 +477,22 @@ class DTextGrammar {
     return (
       open,
       _optionalNewline(),
-      _withActiveClose(
-        const ['spoiler', 'spoilers'],
-        _blocksUntilOptionalClose(block, close),
-      ),
+      _withActiveClose(const [
+        'spoiler',
+        'spoilers',
+      ], _blocksUntilOptionalClose(block, close)),
       close.optional(),
     ).toSequenceParser().map((parts) => DTextSpoilerBlock(parts.$3));
   }
 
-  Parser<List<DTextBlock>> _blocksUntil(
-    SettableParser<DTextBlock> block,
-    Parser<Object?> terminator,
-  ) =>
-      _blocksUntilImpl(block, terminator, requireClose: true);
-
-  // Variant for block openers that e621ng/dtext allows to run unterminated
-  // to EOF (`[section]`, `[quote]`, `[spoiler]`). The block emits whatever
-  // content was found and the caller treats the close as `.optional()` so
-  // the open is never the cause of a top-level parse failure.
+  // e621ng/dtext allows `[section]`, `[quote]`, `[spoiler]` to run
+  // unterminated to EOF. The block emits whatever content was found and
+  // the caller treats the close as `.optional()` so the open is never the
+  // cause of a top-level parse failure.
   Parser<List<DTextBlock>> _blocksUntilOptionalClose(
     SettableParser<DTextBlock> block,
     Parser<Object?> terminator,
-  ) =>
-      _blocksUntilImpl(block, terminator, requireClose: false);
-
-  Parser<List<DTextBlock>> _blocksUntilImpl(
-    SettableParser<DTextBlock> block,
-    Parser<Object?> terminator, {
-    required bool requireClose,
-  }) {
+  ) {
     // e621ng/dtext tolerates inter-block whitespace and trailing horizontal
     // whitespace on the close-tag's own line: `[/ltable] [/section]` and
     // `[/code]   \n[/section]` both close cleanly.
@@ -518,38 +508,37 @@ class DTextGrammar {
       terminator.and().not(),
       block,
     ).toSequenceParser().map((parts) => parts.$3);
-    final tail = requireClose
-        ? (trailingTail, terminator.and()).toSequenceParser()
-        : (trailingTail, [terminator.and(), endOfInput()].toChoiceParser())
-            .toSequenceParser();
-    return (
-      guarded.star(),
-      tail,
-    ).toSequenceParser().map((parts) => parts.$1);
+    final tail = (
+      trailingTail,
+      [terminator.and(), endOfInput()].toChoiceParser(),
+    ).toSequenceParser();
+    return (guarded.star(), tail).toSequenceParser().map((parts) => parts.$1);
   }
 
   // Orphan close tags (`[/section]` etc. with no matching open in scope)
-  // emit as a literal-text paragraph. The [_blocksUntil] terminator guard
-  // keeps this from stealing a properly-paired close inside a container.
-  Parser<DTextBlock> _strayClosePassthrough() => (
-    char('['),
-    char('/'),
-    [
-      string('section', ignoreCase: true),
-      string('quote', ignoreCase: true),
-      string('spoilers', ignoreCase: true),
-      string('spoiler', ignoreCase: true),
-      string('ltable', ignoreCase: true),
-      string('thead', ignoreCase: true),
-      string('tbody', ignoreCase: true),
-      string('tr', ignoreCase: true),
-      string('td', ignoreCase: true),
-      string('th', ignoreCase: true),
-    ].toChoiceParser(),
-    char(']'),
-  ).toSequenceParser().flatten().map(
-    (text) => DTextParagraph([DTextText(text)]),
-  );
+  // emit as a literal-text paragraph. The [_blocksUntilOptionalClose]
+  // terminator guard keeps this from stealing a properly-paired close
+  // inside a container.
+  Parser<DTextBlock> _strayClosePassthrough() =>
+      (
+        char('['),
+        char('/'),
+        [
+          string('section', ignoreCase: true),
+          string('quote', ignoreCase: true),
+          string('spoilers', ignoreCase: true),
+          string('spoiler', ignoreCase: true),
+          string('ltable', ignoreCase: true),
+          string('thead', ignoreCase: true),
+          string('tbody', ignoreCase: true),
+          string('tr', ignoreCase: true),
+          string('td', ignoreCase: true),
+          string('th', ignoreCase: true),
+        ].toChoiceParser(),
+        char(']'),
+      ).toSequenceParser().flatten().map(
+        (text) => DTextParagraph([DTextText(text)]),
+      );
 
   Parser<DTextTable> _tableBlock(SettableParser<DTextInline> inline) {
     final open = _tagOpen('table');
@@ -558,9 +547,7 @@ class DTextGrammar {
       open,
       _tableChildren(inline, close),
       close.optional(),
-    ).toSequenceParser().map(
-      (parts) => DTextTable(parts.$2),
-    );
+    ).toSequenceParser().map((parts) => DTextTable(parts.$2));
   }
 
   Parser<DTextLTable> _ltableBlock(SettableParser<DTextInline> inline) {
@@ -658,50 +645,61 @@ class DTextGrammar {
     // Mirror that with a single-char fallback inside the row's choice so
     // a stray wiki link between cells does not stop the row collector
     // early.
-    final rowStray = (_tagClose('tr').and().not(), any()).toSequenceParser()
-        .map<Object?>((_) => null);
-    final row = (
-      _ws(),
-      _tagOpen('tr'),
-      [cellTh, cellTd, _whitespaceRun(), rowStray].toChoiceParser().starLazy(
-        [_tagClose('tr'), tableClose].toChoiceParser(),
-      ),
-      _tagClose('tr').optional(),
-    ).toSequenceParser().map<DTextTableChild>(
-      (parts) => DTextTableRow(parts.$3.whereType<DTextTableCell>().toList()),
-    );
+    final rowStray = (
+      _tagClose('tr').and().not(),
+      any(),
+    ).toSequenceParser().map<Object?>((_) => null);
+    final row =
+        (
+          _ws(),
+          _tagOpen('tr'),
+          [cellTh, cellTd, _whitespaceRun(), rowStray]
+              .toChoiceParser()
+              .starLazy([_tagClose('tr'), tableClose].toChoiceParser()),
+          _tagClose('tr').optional(),
+        ).toSequenceParser().map<DTextTableChild>(
+          (parts) =>
+              DTextTableRow(parts.$3.whereType<DTextTableCell>().toList()),
+        );
     // e621ng/dtext tolerates a missing `[/thead]` / `[/tbody]` close
     // inside a table, so the close is optional here. The choices below
     // stop when no row or cell matches and the outer table's close
     // lookahead steps in.
-    final head = (
-      _ws(),
-      _tagOpen('thead'),
-      [row, cellTh, cellTd, _whitespaceRun()].toChoiceParser().star(),
-      _tagClose('thead').optional(),
-    ).toSequenceParser().map<DTextTableChild>(
-      (parts) => DTextTableHead(_wrapBareCells(parts.$3)),
-    );
+    final head =
+        (
+          _ws(),
+          _tagOpen('thead'),
+          [row, cellTh, cellTd, _whitespaceRun()].toChoiceParser().star(),
+          _tagClose('thead').optional(),
+        ).toSequenceParser().map<DTextTableChild>(
+          (parts) => DTextTableHead(_wrapBareCells(parts.$3)),
+        );
     // e621ng/dtext keeps a nested `[thead]` inside `[tbody]` rather than
     // closing the body, so the head shows up as one of the body's rows.
     // Mirror that by allowing `head` inside the body's star.
-    final body = (
-      _ws(),
-      _tagOpen('tbody'),
-      [head, row, cellTh, cellTd, _whitespaceRun()].toChoiceParser().star(),
-      _tagClose('tbody').optional(),
-    ).toSequenceParser().map<DTextTableChild>(
-      (parts) => DTextTableBody(_wrapBareCells(parts.$3)),
-    );
+    final body =
+        (
+          _ws(),
+          _tagOpen('tbody'),
+          [head, row, cellTh, cellTd, _whitespaceRun()].toChoiceParser().star(),
+          _tagClose('tbody').optional(),
+        ).toSequenceParser().map<DTextTableChild>(
+          (parts) => DTextTableBody(_wrapBareCells(parts.$3)),
+        );
     // Real-world tables sometimes have stray text between cells (e.g. a
     // typo `[/td]No.[td]`). Consume a single char as last resort so the
     // table close lookahead always advances; e621ng/dtext also swallows
     // these fragments rather than failing the whole block.
     final stray = any().map<Object?>((_) => null);
-    return [head, body, row, cellTh, cellTd, _whitespaceRun(), stray]
-        .toChoiceParser()
-        .starLazy(tableClose)
-        .map(_wrapBareCells);
+    return [
+      head,
+      body,
+      row,
+      cellTh,
+      cellTd,
+      _whitespaceRun(),
+      stray,
+    ].toChoiceParser().starLazy(tableClose).map(_wrapBareCells);
   }
 
   // e621ng/dtext wraps bare cells (`[th]a[/th][th]b[/th]` inside a `[thead]`
@@ -714,6 +712,7 @@ class DTextGrammar {
       out.add(DTextTableRow(pendingCells!));
       pendingCells = null;
     }
+
     for (final item in items) {
       if (item is DTextTableCell) {
         pendingCells ??= <DTextTableCell>[];
@@ -738,17 +737,14 @@ class DTextGrammar {
     String tag,
     DTextTableCellType cellType,
     SettableParser<DTextInline> inline,
-  ) => (
-    _ws(),
-    _tagOpen(tag),
-    inline.starLazy(_tagClose(tag)),
-    _tagClose(tag),
-  ).toSequenceParser().map<Object?>(
-    (parts) => DTextTableCell(
-      cellType: cellType,
-      children: _trimTrailingLineBreaks(parts.$3),
-    ),
-  );
+  ) => (_ws(), _tagOpen(tag), inline.starLazy(_tagClose(tag)), _tagClose(tag))
+      .toSequenceParser()
+      .map<Object?>(
+        (parts) => DTextTableCell(
+          cellType: cellType,
+          children: _trimTrailingLineBreaks(parts.$3),
+        ),
+      );
 
   Parser<void> _ws() => pattern(' \t\r\n').star();
 
@@ -764,30 +760,32 @@ class DTextGrammar {
     // running `(stop.not(), pattern('^\n\r')).toSequenceParser()` per char
     // dominated profile time on list-heavy fixtures.
     final lineBody = _ListLineParser();
-    final item = (
-      char('*').plusString(),
-      char(' ').plus(),
-      lineBody.map(
-        (line) => _mergeAdjacentText(_parseInline(line, inline)),
-      ),
-    ).toSequenceParser().map(
-      (parts) => DTextListItem(depth: parts.$1.length, children: parts.$3),
-    );
+    final item =
+        (
+          char('*').plusString(),
+          char(' ').plus(),
+          lineBody.map(
+            (line) => _mergeAdjacentText(_parseInline(line, inline)),
+          ),
+        ).toSequenceParser().map(
+          (parts) => DTextListItem(depth: parts.$1.length, children: parts.$3),
+        );
     return item
         .plusSeparated(_blockSeparator())
         .map((sep) => DTextList(sep.elements.toList()));
   }
 
-  Parser<DTextLiteralHtml> _strayBlockClose() => (
-    string('[/', ignoreCase: true),
-    [
-      string('code', ignoreCase: true),
-      string('table', ignoreCase: true),
-    ].toChoiceParser(),
-    char(']'),
-  ).toSequenceParser().flatten().map(
-    (text) => DTextLiteralHtml(prefix: text, children: const []),
-  );
+  Parser<DTextLiteralHtml> _strayBlockClose() =>
+      (
+        string('[/', ignoreCase: true),
+        [
+          string('code', ignoreCase: true),
+          string('table', ignoreCase: true),
+        ].toChoiceParser(),
+        char(']'),
+      ).toSequenceParser().flatten().map(
+        (text) => DTextLiteralHtml(prefix: text, children: const []),
+      );
 
   Parser<DTextParagraph> _paragraph(SettableParser<DTextInline> inline) {
     final terminator = _paragraphTerminator();
@@ -795,9 +793,8 @@ class DTextGrammar {
       terminator.not(),
       inline.plusLazy(terminator),
     ).toSequenceParser().map(
-      (parts) => DTextParagraph(
-        _trimTrailingLineBreaks(_mergeAdjacentText(parts.$2)),
-      ),
+      (parts) =>
+          DTextParagraph(_trimTrailingLineBreaks(_mergeAdjacentText(parts.$2))),
     );
   }
 
@@ -807,10 +804,7 @@ class DTextGrammar {
   Parser<void> _paragraphTerminator() {
     final newlineLed = (
       [char('\n'), char('\r')].toChoiceParser().and(),
-      [
-        _blankLineLookahead(),
-        _blockOpenerLookahead(),
-      ].toChoiceParser(),
+      [_blankLineLookahead(), _blockOpenerLookahead()].toChoiceParser(),
     ).toSequenceParser().map((_) => null);
     // When an inline container (italic, color, etc.) ate the blank line
     // that would have separated blocks, the cursor lands on the next
@@ -849,8 +843,8 @@ class DTextGrammar {
   // Container-level closes that only stop the paragraph when a matching
   // container is open around the cursor. Stray closes (`body [/quote]` at
   // top level) fall through to plain text in the surrounding paragraph.
-  Parser<void> _activeCloseLookahead() =>
-      _ActiveCloseLookaheadParser(this);
+  // ignore: use_to_and_as_if_applicable
+  Parser<void> _activeCloseLookahead() => _ActiveCloseLookaheadParser(this);
 
   // Pushes [names] onto [_activeCloses] for the duration of [body], then
   // pops them. Multiple names cover containers whose close has spelling
@@ -910,22 +904,14 @@ class DTextGrammar {
       string('quote', ignoreCase: true),
       [
         char(']'),
-        (
-          char('='),
-          pattern('^]\n').starString(),
-          char(']'),
-        ).toSequenceParser(),
+        (char('='), pattern('^]\n').starString(), char(']')).toSequenceParser(),
       ].toChoiceParser(),
     ).toSequenceParser();
     final section = (
       string('section', ignoreCase: true),
       [
         char(']'),
-        (
-          char('='),
-          pattern('^]').starString(),
-          char(']'),
-        ).toSequenceParser(),
+        (char('='), pattern('^]').starString(), char(']')).toSequenceParser(),
         (
           string(',expanded', ignoreCase: true),
           [
@@ -981,10 +967,10 @@ class DTextGrammar {
     char(']'),
   ).toSequenceParser().and();
 
-  Parser<DTextInline> _lineBreak() =>
-      (char('\r').optional(), char('\n')).toSequenceParser().map(
-        (_) => const DTextLineBreak(),
-      );
+  Parser<DTextInline> _lineBreak() => (
+    char('\r').optional(),
+    char('\n'),
+  ).toSequenceParser().map((_) => const DTextLineBreak());
 
   // e621ng/dtext renders a bare `\r` (no following `\n`) as a single-space
   // text node (ragel rule `'\r' => append(' ')` in the inline scanner),
@@ -1001,28 +987,36 @@ class DTextGrammar {
 
   Parser<DTextInlineCode> _inlineCode() {
     // Allow `\`` inside inline code as an escaped backtick (e621ng/dtext).
-    final escapedBacktick = (char(r'\'), char('`'))
-        .toSequenceParser()
-        .map((_) => '`');
+    final escapedBacktick = (
+      char(r'\'),
+      char('`'),
+    ).toSequenceParser().map((_) => '`');
     final plainChar = pattern('^`\n').map((c) => c);
     return (
       char('`'),
-      [escapedBacktick, plainChar].toChoiceParser().star().map((list) => list.join()),
+      [
+        escapedBacktick,
+        plainChar,
+      ].toChoiceParser().star().map((list) => list.join()),
       char('`'),
     ).toSequenceParser().map((parts) => DTextInlineCode(parts.$2));
   }
 
-  Parser<DTextInline> _bracketedInline(SettableParser<DTextInline> inline) =>
-      [
-        _simpleInline('b', inline, DTextBold.new),
-        _simpleInline('i', inline, DTextItalic.new),
-        _simpleInline('s', inline, DTextStrikeout.new),
-        _simpleInline('u', inline, DTextUnderline.new),
-        _supSubInline('sup', inline, DTextSuperscript.new, DTextFragmentWrapper.sup),
-        _supSubInline('sub', inline, DTextSubscript.new, DTextFragmentWrapper.sub),
-        _simpleInline('spoiler', inline, DTextInlineSpoiler.new),
-        _colorInline(inline),
-      ].toChoiceParser();
+  Parser<DTextInline> _bracketedInline(SettableParser<DTextInline> inline) => [
+    _simpleInline('b', inline, DTextBold.new),
+    _simpleInline('i', inline, DTextItalic.new),
+    _simpleInline('s', inline, DTextStrikeout.new),
+    _simpleInline('u', inline, DTextUnderline.new),
+    _supSubInline(
+      'sup',
+      inline,
+      DTextSuperscript.new,
+      DTextFragmentWrapper.sup,
+    ),
+    _supSubInline('sub', inline, DTextSubscript.new, DTextFragmentWrapper.sub),
+    _simpleInline('spoiler', inline, DTextInlineSpoiler.new),
+    _colorInline(inline),
+  ].toChoiceParser();
 
   Parser<DTextInline> _simpleInline(
     String tag,
@@ -1112,12 +1106,12 @@ class DTextGrammar {
         (char('\r').optional(), char('\n')).toSequenceParser(),
       ].toChoiceParser().star(),
     ).toSequenceParser().map<DTextInline?>((_) => null);
-    return [
-      blankEater,
-      inline.map<DTextInline?>((n) => n),
-    ].toChoiceParser().starLazy(stop).map(
-      (list) => _mergeAdjacentText(list.whereType<DTextInline>().toList()),
-    );
+    return [blankEater, inline.map<DTextInline?>((n) => n)]
+        .toChoiceParser()
+        .starLazy(stop)
+        .map(
+          (list) => _mergeAdjacentText(list.whereType<DTextInline>().toList()),
+        );
   }
 
   Parser<DTextInline> _internalAnchor() => (
@@ -1126,111 +1120,127 @@ class DTextGrammar {
     char(']'),
   ).toSequenceParser().map((parts) => DTextInternalAnchor(parts.$2));
 
-  Parser<DTextInline> _wikiLink(SettableParser<DTextInline> inline) => (
-    string('[['),
-    pattern('^]|\n').starString(),
-    (
-      char('|'),
-      pattern('^]\n').starString(),
-    ).toSequenceParser().map((p) => p.$2).optional(),
-    string(']]'),
-  ).toSequenceParser().where((parts) {
-    final raw = parts.$2;
-    final title = parts.$3;
-    if (raw.isEmpty && title == null) return false;
-    if (title != null && title.isEmpty) return false;
-    if (title != null && title.startsWith('|')) return false;
-    return true;
-  }).map((parts) {
-    final raw = parts.$2;
-    final title = parts.$3;
-    String tag = raw;
-    String? anchor;
-    final hashIdx = raw.indexOf('#');
-    if (hashIdx >= 0) {
-      tag = raw.substring(0, hashIdx);
-      anchor = raw.substring(hashIdx + 1);
-    }
-    return _buildWikiLink(tag: tag, anchor: anchor, title: title);
-  });
+  Parser<DTextInline> _wikiLink(SettableParser<DTextInline> inline) =>
+      (
+            string('[['),
+            pattern('^]|\n').starString(),
+            (
+              char('|'),
+              pattern('^]\n').starString(),
+            ).toSequenceParser().map((p) => p.$2).optional(),
+            string(']]'),
+          )
+          .toSequenceParser()
+          .where((parts) {
+            final raw = parts.$2;
+            final title = parts.$3;
+            if (raw.isEmpty && title == null) return false;
+            if (title != null && title.isEmpty) return false;
+            if (title != null && title.startsWith('|')) return false;
+            return true;
+          })
+          .map((parts) {
+            final raw = parts.$2;
+            final title = parts.$3;
+            String tag = raw;
+            String? anchor;
+            final hashIdx = raw.indexOf('#');
+            if (hashIdx >= 0) {
+              tag = raw.substring(0, hashIdx);
+              anchor = raw.substring(hashIdx + 1);
+            }
+            return _buildWikiLink(tag: tag, anchor: anchor, title: title);
+          });
 
-  Parser<DTextInline> _postSearchLink() => (
-    string('{{'),
-    pattern('^}\n').plusString(),
-    string('}}'),
-  ).toSequenceParser().map((parts) {
-    final raw = parts.$2;
-    final pipe = raw.indexOf('|');
-    final tag = pipe < 0 ? raw : raw.substring(0, pipe);
-    final title = pipe < 0 ? null : raw.substring(pipe + 1);
-    return _buildPostSearchLink(tag: tag, title: title);
-  });
+  Parser<DTextInline> _postSearchLink() =>
+      (
+        string('{{'),
+        pattern('^}\n').plusString(),
+        string('}}'),
+      ).toSequenceParser().map((parts) {
+        final raw = parts.$2;
+        final pipe = raw.indexOf('|');
+        final tag = pipe < 0 ? raw : raw.substring(0, pipe);
+        final title = pipe < 0 ? null : raw.substring(pipe + 1);
+        return _buildPostSearchLink(tag: tag, title: title);
+      });
 
-  Parser<DTextInline> _textileLink(SettableParser<DTextInline> inline) => (
-    char('"'),
-    pattern('^"\n').plusString(),
-    string('":'),
-    _textileUrl(),
-  ).toSequenceParser().map((parts) {
-    final title = parts.$2;
-    final url = parts.$4;
-    return DTextLink(
-      linkType: DTextLinkType.inline,
-      href: url,
-      children: _parseInline(title, inline),
-    );
-  });
+  Parser<DTextInline> _textileLink(SettableParser<DTextInline> inline) =>
+      (
+        char('"'),
+        pattern('^"\n').plusString(),
+        string('":'),
+        _textileUrl(),
+      ).toSequenceParser().map((parts) {
+        final title = parts.$2;
+        final url = parts.$4;
+        return DTextLink(
+          linkType: DTextLinkType.inline,
+          href: url,
+          children: _parseInline(title, inline),
+        );
+      });
 
   Parser<String> _textileUrl() => [
-    (char('['), pattern('^]\n').plusString(), char(']'))
-        .toSequenceParser()
-        .map((parts) => parts.$2),
     (
-      [string('http://', ignoreCase: true), string('https://', ignoreCase: true)]
-          .toChoiceParser(),
+      char('['),
+      pattern('^]\n').plusString(),
+      char(']'),
+    ).toSequenceParser().map((parts) => parts.$2),
+    (
+      [
+        string('http://', ignoreCase: true),
+        string('https://', ignoreCase: true),
+      ].toChoiceParser(),
       _UrlBodyParser(),
     ).toSequenceParser().map((parts) => '${parts.$1}${parts.$2}'),
-    (char('/'), _UrlBodyParser())
-        .toSequenceParser()
-        .map((parts) => '/${parts.$2}'),
-    (char('#'), _UrlBodyParser())
-        .toSequenceParser()
-        .map((parts) => '#${parts.$2}'),
+    (
+      char('/'),
+      _UrlBodyParser(),
+    ).toSequenceParser().map((parts) => '/${parts.$2}'),
+    (
+      char('#'),
+      _UrlBodyParser(),
+    ).toSequenceParser().map((parts) => '#${parts.$2}'),
   ].toChoiceParser();
 
   // Bare URL matcher (ragel `url = 'http'i 's'i? '://' ^space+`). e621ng/dtext
   // breaks out of the text scanner at `h`/`H` + `"http"` and tries this rule.
   // Order in our inline choice matters: this runs after the bracketed-form
   // matchers (`<http…>`, `"…":http…`) so it does not steal their inputs.
-  Parser<DTextInline> _inlineUrl() => (
-    [
-      string('http://', ignoreCase: true),
-      string('https://', ignoreCase: true),
-    ].toChoiceParser().flatten(),
-    _UrlBodyParser(),
-  ).toSequenceParser().map((parts) {
-    final href = '${parts.$1}${parts.$2}';
-    return DTextLink(
-      linkType: DTextLinkType.url,
-      href: href,
-      children: [DTextText(href)],
-    );
-  });
+  Parser<DTextInline> _inlineUrl() =>
+      (
+        [
+          string('http://', ignoreCase: true),
+          string('https://', ignoreCase: true),
+        ].toChoiceParser().flatten(),
+        _UrlBodyParser(),
+      ).toSequenceParser().map((parts) {
+        final href = '${parts.$1}${parts.$2}';
+        return DTextLink(
+          linkType: DTextLinkType.url,
+          href: href,
+          children: [DTextText(href)],
+        );
+      });
 
-  Parser<DTextInline> _delimitedUrl() => (
-    char('<'),
-    [string('http://', ignoreCase: true), string('https://', ignoreCase: true)]
-        .toChoiceParser(),
-    pattern('^ \t\n\r\f\v>').plusString(),
-    char('>'),
-  ).toSequenceParser().map((parts) {
-    final href = '${parts.$2}${parts.$3}';
-    return DTextLink(
-      linkType: DTextLinkType.url,
-      href: href,
-      children: [DTextText(href)],
-    );
-  });
+  Parser<DTextInline> _delimitedUrl() =>
+      (
+        char('<'),
+        [
+          string('http://', ignoreCase: true),
+          string('https://', ignoreCase: true),
+        ].toChoiceParser(),
+        pattern('^ \t\n\r\f\v>').plusString(),
+        char('>'),
+      ).toSequenceParser().map((parts) {
+        final href = '${parts.$2}${parts.$3}';
+        return DTextLink(
+          linkType: DTextLinkType.url,
+          href: href,
+          children: [DTextText(href)],
+        );
+      });
 
   // Single-char fallback. Keeps the inline choice total so a stray trigger
   // char (`[`, `"`, etc.) that no rule consumes always advances by one.
@@ -1250,11 +1260,8 @@ class DTextGrammar {
     ).toSequenceParser().optional(),
   ).toSequenceParser();
 
-  Parser<Object?> _tagOpen(String tag) => (
-    char('['),
-    string(tag, ignoreCase: true),
-    char(']'),
-  ).toSequenceParser();
+  Parser<Object?> _tagOpen(String tag) =>
+      (char('['), string(tag, ignoreCase: true), char(']')).toSequenceParser();
 
   Parser<Object?> _tagClose(String tag) => (
     char('['),
@@ -1267,9 +1274,7 @@ class DTextGrammar {
     if (nodes.isEmpty) return nodes;
     final out = <DTextInline>[];
     for (final node in nodes) {
-      if (node is DTextText &&
-          out.isNotEmpty &&
-          out.last is DTextText) {
+      if (node is DTextText && out.isNotEmpty && out.last is DTextText) {
         final prev = out.last as DTextText;
         out.removeLast();
         out.add(DTextText(prev.content + node.content));
@@ -1329,7 +1334,8 @@ class DTextGrammar {
       );
     }
     final normalisedTag = _asciiLowercase(tag.replaceAll(' ', '_'));
-    var href = '/wiki_pages/show_or_new?title=${_rubyUriEscapeWithHash(normalisedTag)}';
+    var href =
+        '/wiki_pages/show_or_new?title=${_rubyUriEscapeWithHash(normalisedTag)}';
     if (anchor != null) {
       final normalisedAnchor = _asciiLowercase(anchor.replaceAll(' ', '_'));
       href = '$href#${_rubyUriEscapeWithHash(normalisedAnchor)}';
@@ -1904,7 +1910,7 @@ class _BlockDispatchParser extends Parser<DTextBlock> {
       } else if (c == 0x5b) {
         final r = bracketBlock.parseOn(context);
         if (r is Success<Object?>) {
-          return context.success(r.value as DTextBlock, r.position);
+          return context.success(r.value! as DTextBlock, r.position);
         }
       }
     }
@@ -1914,8 +1920,13 @@ class _BlockDispatchParser extends Parser<DTextBlock> {
   }
 
   @override
-  List<Parser> get children =>
-      [headerBlock, listBlock, bracketBlock, paragraph, strayClose];
+  List<Parser> get children => [
+    headerBlock,
+    listBlock,
+    bracketBlock,
+    paragraph,
+    strayClose,
+  ];
 
   @override
   void replace(Parser source, Parser target) {

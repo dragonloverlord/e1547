@@ -31,9 +31,7 @@ Future<void> main(List<String> args) async {
   final categories = args.isEmpty ? _categories : args;
   for (final c in categories) {
     if (!_categories.contains(c)) {
-      stderr.writeln(
-        'unknown category "$c". known: ${_categories.join(", ")}',
-      );
+      stderr.writeln('unknown category "$c". known: ${_categories.join(", ")}');
       exit(2);
     }
   }

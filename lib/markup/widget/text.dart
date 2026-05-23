@@ -116,9 +116,7 @@ class DTextBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return DefaultTextStyle.merge(
       style: style,
-      child: Expandables(
-        child: _renderNode(context, content),
-      ),
+      child: Expandables(child: _renderNode(context, content)),
     );
   }
 
@@ -182,10 +180,7 @@ class DTextBody extends StatelessWidget {
         child: DTextBody(content: DTextDocument(block.children), style: style),
       ),
       DTextSpoilerBlock() => SpoilerBlockWrap(
-        child: DTextBody(
-          content: DTextDocument(block.children),
-          style: style,
-        ),
+        child: DTextBody(content: DTextDocument(block.children), style: style),
       ),
       DTextSection() => SectionWrap(
         key: ObjectKey(block),
@@ -194,10 +189,7 @@ class DTextBody extends StatelessWidget {
         child: DTextBody(content: DTextDocument(block.children), style: style),
       ),
       DTextCodeBlock() => CodeWrap(
-        child: SelectableText(
-          block.content,
-          textAlign: textAlign,
-        ),
+        child: SelectableText(block.content, textAlign: textAlign),
       ),
       DTextTable() => DTextTableWidget(children: block.children),
       DTextLTable() => DTextTableWidget(children: block.children),
@@ -239,10 +231,7 @@ class DTextBody extends StatelessWidget {
     );
   }
 
-  InlineSpan _buildInline(
-    BuildContext context,
-    List<DTextInline> nodes,
-  ) =>
+  InlineSpan _buildInline(BuildContext context, List<DTextInline> nodes) =>
       TextSpan(children: _inlineSpans(context, nodes));
 
   List<InlineSpan> _inlineSpans(
@@ -272,9 +261,7 @@ class DTextBody extends StatelessWidget {
       ),
       DTextSuperscript() => TextSpan(
         children: _inlineSpans(context, node.children),
-        style: const TextStyle(
-          fontFeatures: [FontFeature.superscripts()],
-        ),
+        style: const TextStyle(fontFeatures: [FontFeature.superscripts()]),
       ),
       DTextSubscript() => TextSpan(
         children: _inlineSpans(context, node.children),
@@ -328,9 +315,7 @@ class DTextBody extends StatelessWidget {
     final action = _buildLinkAction(context, node, local: local);
     final children = node.children;
     final preview = LinkPreviewProvider.of(context);
-    final previewLink = local
-        ? context.read<Client>().withHost(href)
-        : href;
+    final previewLink = local ? context.read<Client>().withHost(href) : href;
     final spans = children != null && children.isNotEmpty
         ? _inlineSpans(context, children)
         : [TextSpan(text: _linkDisplay(href, node.title))];
