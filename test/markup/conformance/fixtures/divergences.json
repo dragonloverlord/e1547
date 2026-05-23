@@ -171,7 +171,6 @@
       "type": "document"
     },
     "input": "body [/quote]",
-    "label": "F. stray close tag at top level splits the surrounding paragraph",
-    "skip": "known divergence: _closingTagLookahead in the paragraph terminator fires on stray closes with no matching open in scope, then _strayClosePassthrough emits the stray close as its own paragraph block; the reference keeps it as inline text in the same paragraph"
+    "label": "F. stray close tag at top level splits the surrounding paragraph"
   }
 ]

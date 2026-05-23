@@ -42,8 +42,17 @@ class DTextGrammar {
   int _supSubDepth = 0;
   static const int _supSubMaxDepth = 3;
 
+  // Stack of close-tag names whose containers are currently open around the
+  // parse cursor. Push on entering a container body, pop on exit. The
+  // paragraph terminator only stops at a close tag whose name is on this
+  // stack; closes with no matching open get absorbed into the paragraph as
+  // literal text, matching the reference's "stray close stays inline"
+  // behavior.
+  final List<String> _activeCloses = [];
+
   DTextDocument parse(String input) {
     _supSubDepth = 0;
+    _activeCloses.clear();
     final sanitised = _hasUnencodableScalar(input) ? '' : input;
     final result = _document.parse(sanitised);
     if (result is Success<DTextDocument>) {
@@ -375,7 +384,10 @@ class DTextGrammar {
     ).toSequenceParser().map<String?>((parts) => parts.$2);
     return (
       open,
-      _blocksUntilOptionalClose(block, _tagClose('quote')),
+      _withActiveClose(
+        'quote',
+        _blocksUntilOptionalClose(block, _tagClose('quote')),
+      ),
       _tagClose('quote').optional(),
       // e621ng/dtext eats trailing horizontal whitespace on the line that
       // holds `[/quote]`, so `[/quote] \n\nfoo` parses to two children, not
@@ -411,7 +423,10 @@ class DTextGrammar {
     return (
       open,
       _optionalNewline(),
-      _blocksUntilOptionalClose(block, _tagClose('section')),
+      _withActiveClose(
+        'section',
+        _blocksUntilOptionalClose(block, _tagClose('section')),
+      ),
       _tagClose('section').optional(),
       // Same trailing-whitespace fold as [_quoteBlock]; see comment there.
       pattern(' \t').star(),
@@ -441,7 +456,10 @@ class DTextGrammar {
     return (
       open,
       _optionalNewline(),
-      _blocksUntilOptionalClose(block, close),
+      _withActiveClose(
+        const ['spoiler', 'spoilers'],
+        _blocksUntilOptionalClose(block, close),
+      ),
       close.optional(),
     ).toSequenceParser().map((parts) => DTextSpoilerBlock(parts.$3));
   }
@@ -778,10 +796,49 @@ class DTextGrammar {
     ).toSequenceParser().map((_) => null);
     return [
       newlineLed,
-      _closingTagLookahead(),
+      _alwaysStopCloseLookahead(),
+      _activeCloseLookahead(),
       _blockTagOpenLookahead(),
       endOfInput(),
     ].toChoiceParser();
+  }
+
+  // Block-level closes that always terminate a paragraph, regardless of
+  // whether any matching container is open. `[/code]` and `[/table]` get
+  // promoted to a `literal_html` block in their own right by
+  // [_strayBlockClose], so they need to break the paragraph even at top
+  // level.
+  Parser<void> _alwaysStopCloseLookahead() => (
+    char('['),
+    char('/'),
+    [
+      string('code', ignoreCase: true),
+      string('table', ignoreCase: true),
+    ].toChoiceParser(),
+    char(']'),
+  ).toSequenceParser().and();
+
+  // Container-level closes that only stop the paragraph when a matching
+  // container is open around the cursor. Stray closes (`body [/quote]` at
+  // top level) fall through to plain text in the surrounding paragraph.
+  Parser<void> _activeCloseLookahead() =>
+      _ActiveCloseLookaheadParser(this);
+
+  // Pushes [names] onto [_activeCloses] for the duration of [body], then
+  // pops them. Multiple names cover containers whose close has spelling
+  // variants (e.g. `[/spoiler]` and `[/spoilers]` both close `[spoiler]`).
+  Parser<T> _withActiveClose<T>(Object names, Parser<T> body) {
+    final list = names is List<String> ? names : [names as String];
+    return body.callCC<T>((continuation, context) {
+      _activeCloses.addAll(list);
+      try {
+        return continuation(context);
+      } finally {
+        for (var i = 0; i < list.length; i++) {
+          _activeCloses.removeLast();
+        }
+      }
+    });
   }
 
   static List<DTextInline> _trimTrailingLineBreaks(List<DTextInline> nodes) {
@@ -1457,6 +1514,61 @@ class _UrlBodyParser extends Parser<String> {
 
   @override
   _UrlBodyParser copy() => _UrlBodyParser();
+}
+
+// Matches a close tag `[/<name>]` at the cursor only when <name> is on the
+// grammar's [_activeCloses] stack. Used by the paragraph terminator so a
+// stray close that does not correspond to any open container is absorbed
+// into the paragraph as literal text instead of splitting it.
+class _ActiveCloseLookaheadParser extends Parser<void> {
+  _ActiveCloseLookaheadParser(this.grammar);
+
+  final DTextGrammar grammar;
+
+  @override
+  Result<void> parseOn(Context ctx) {
+    final stack = grammar._activeCloses;
+    if (stack.isEmpty) return ctx.failure('no active container');
+    final buf = ctx.buffer;
+    final pos = ctx.position;
+    final len = buf.length;
+    if (pos + 3 >= len) return ctx.failure('not a close tag');
+    if (buf.codeUnitAt(pos) != 0x5b) return ctx.failure('expected [');
+    if (buf.codeUnitAt(pos + 1) != 0x2f) return ctx.failure('expected /');
+    var end = pos + 2;
+    while (end < len && buf.codeUnitAt(end) != 0x5d) {
+      end++;
+    }
+    if (end >= len) return ctx.failure('no closing ]');
+    final name = buf.substring(pos + 2, end).toLowerCase();
+    for (var i = 0; i < stack.length; i++) {
+      if (stack[i] == name) return ctx.success(null, pos);
+    }
+    return ctx.failure('close tag not active');
+  }
+
+  @override
+  int fastParseOn(String buf, int pos) {
+    final stack = grammar._activeCloses;
+    if (stack.isEmpty) return -1;
+    final len = buf.length;
+    if (pos + 3 >= len) return -1;
+    if (buf.codeUnitAt(pos) != 0x5b) return -1;
+    if (buf.codeUnitAt(pos + 1) != 0x2f) return -1;
+    var end = pos + 2;
+    while (end < len && buf.codeUnitAt(end) != 0x5d) {
+      end++;
+    }
+    if (end >= len) return -1;
+    final name = buf.substring(pos + 2, end).toLowerCase();
+    for (var i = 0; i < stack.length; i++) {
+      if (stack[i] == name) return pos;
+    }
+    return -1;
+  }
+
+  @override
+  Parser<void> copy() => _ActiveCloseLookaheadParser(grammar);
 }
 
 // Port of e621ng/dtext's inline text scanner (the `text` rule in ragel's
