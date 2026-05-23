@@ -126,8 +126,7 @@
       "type": "document"
     },
     "input": "h4. [color=red]hi\nrest",
-    "label": "D. header containing unclosed inline keeps eating across the newline",
-    "skip": "known divergence: an unclosed inline container inside a header consumes the line break and the following line; the reference closes the header at the newline and starts a new paragraph"
+    "label": "D. header containing unclosed inline keeps eating across the newline"
   },
   {
     "expected": {

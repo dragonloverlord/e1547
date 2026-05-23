@@ -50,9 +50,16 @@ class DTextGrammar {
   // behavior.
   final List<String> _activeCloses = [];
 
+  // While > 0, any inline container (`[b]`, `[color=red]`, …) parsed by
+  // [_inlineContainerBody] stops at the first `\n`/`\r` instead of the
+  // blank-line stop. Headers set this so an unclosed inline inside a
+  // header does not eat past the newline that ends the header line.
+  int _singleNewlineDepth = 0;
+
   DTextDocument parse(String input) {
     _supSubDepth = 0;
     _activeCloses.clear();
+    _singleNewlineDepth = 0;
     final sanitised = _hasUnencodableScalar(input) ? '' : input;
     final result = _document.parse(sanitised);
     if (result is Success<DTextDocument>) {
@@ -329,10 +336,21 @@ class DTextGrammar {
     ).toSequenceParser();
     return (
       headerOpen,
-      _inlineUntilNewline(inline),
+      _withSingleNewlineStop(_inlineUntilNewline(inline)),
     ).toSequenceParser().map(
       (parts) => DTextHeader(level: parts.$1.$2, children: parts.$2),
     );
+  }
+
+  Parser<T> _withSingleNewlineStop<T>(Parser<T> body) {
+    return body.callCC<T>((continuation, context) {
+      _singleNewlineDepth++;
+      try {
+        return continuation(context);
+      } finally {
+        _singleNewlineDepth--;
+      }
+    });
   }
 
   Parser<List<DTextInline>> _inlineUntilNewline(
@@ -1064,12 +1082,14 @@ class DTextGrammar {
       _atLineStartLookahead(),
       [_listOpenLookahead(), _headerOpenLookahead()].toChoiceParser(),
     ).toSequenceParser();
+    final singleNewlineStop = _SingleNewlineIfFlagParser(this);
     final stop = [
       close,
       _blockOpenerLookahead(),
       _blockTagOpenLookahead(),
       _closingTagLookahead(),
       lineStartListHeader,
+      singleNewlineStop,
       endOfInput(),
     ].toChoiceParser();
     final blankEater = (
@@ -1569,6 +1589,41 @@ class _ActiveCloseLookaheadParser extends Parser<void> {
 
   @override
   Parser<void> copy() => _ActiveCloseLookaheadParser(grammar);
+}
+
+// Lookahead that matches `\n` or `\r` when [DTextGrammar._singleNewlineDepth]
+// is positive. Lets an inline container parsed inside a header stop at the
+// header's terminating newline so an unclosed `[color=red]` does not bleed
+// the following line into the header.
+class _SingleNewlineIfFlagParser extends Parser<void> {
+  _SingleNewlineIfFlagParser(this.grammar);
+
+  final DTextGrammar grammar;
+
+  @override
+  Result<void> parseOn(Context ctx) {
+    if (grammar._singleNewlineDepth == 0) {
+      return ctx.failure('single-newline stop disabled');
+    }
+    final buf = ctx.buffer;
+    final pos = ctx.position;
+    if (pos >= buf.length) return ctx.failure('end of input');
+    final c = buf.codeUnitAt(pos);
+    if (c == 0x0a || c == 0x0d) return ctx.success(null, pos);
+    return ctx.failure('not a newline');
+  }
+
+  @override
+  int fastParseOn(String buf, int pos) {
+    if (grammar._singleNewlineDepth == 0) return -1;
+    if (pos >= buf.length) return -1;
+    final c = buf.codeUnitAt(pos);
+    if (c == 0x0a || c == 0x0d) return pos;
+    return -1;
+  }
+
+  @override
+  Parser<void> copy() => _SingleNewlineIfFlagParser(grammar);
 }
 
 // Port of e621ng/dtext's inline text scanner (the `text` rule in ragel's
