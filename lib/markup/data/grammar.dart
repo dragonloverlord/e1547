@@ -4,12 +4,23 @@ import 'package:petitparser/petitparser.dart';
 // DText grammar.
 //
 // DText is the markup format used on e621-family sites. The reference
-// implementation is `e621ng/dtext`, a Ruby gem whose core is a Ragel state
-// machine in `ext/dtext/dtext.cpp.rl` wrapped by `lib/dtext.rb`.
+// implementation is `e621ng/dtext` (a Ruby gem whose core is a Ragel state
+// machine in `ext/dtext/dtext.cpp.rl`, wrapped by `lib/dtext.rb`). Comments
+// in this file cite it directly:
+//   "ragel rule X" cites the state machine in `dtext.cpp.rl`.
+//   "ruby does Y" cites the surrounding code in `dtext.rb`.
 //
 // Conformance is checked under `test/markup/conformance/` by diffing this
 // parser's AST against a TypeScript port (dmark) as a practical stand-in
-// for the Ruby reference.
+// for the Ruby reference. dmark is a proxy oracle for the test harness,
+// not the spec, and is not mentioned in this file.
+//
+// Two AST-shape choices below intentionally do not mimic any other parser:
+//   1. Stray block closes (`[/code]`, `[/table]`) emit a `literal_html`
+//      node with `prefix` set to the close tag and an empty `children`
+//      list, so the stray close stays a typed AST node.
+//   2. On full parse failure we emit a single `raw_block_text` block
+//      holding the input verbatim, keeping the AST well-typed.
 class DTextGrammar {
   late final Parser<DTextDocument> _document = _buildDocument();
 
@@ -34,7 +45,11 @@ class DTextGrammar {
   DTextDocument parse(String input) {
     _supSubDepth = 0;
     final sanitised = _hasUnencodableScalar(input) ? '' : input;
-    return _capThumbIdType(_document.parse(sanitised).value);
+    final result = _document.parse(sanitised);
+    if (result is Success<DTextDocument>) {
+      return _capThumbIdType(result.value);
+    }
+    return DTextDocument([DTextRawBlockText(sanitised)]);
   }
 
   // e621ng/dtext only renders the first 10 `thumb #N` references in a
@@ -89,7 +104,7 @@ class DTextGrammar {
         prefix: prefix,
         children: _capInlineThumbs(children, counter),
       ),
-      DTextCodeBlock() => block,
+      DTextCodeBlock() || DTextRawBlockText() => block,
     };
   }
 
@@ -374,14 +389,14 @@ class DTextGrammar {
   Parser<DTextSection> _sectionBlock(SettableParser<DTextBlock> block) {
     final expandedTitle = (
       string('[section,expanded=', ignoreCase: true),
-      pattern('^]\n').starString(),
+      pattern('^]').starString(),
       char(']'),
     ).toSequenceParser().map((parts) => (parts.$2, true));
     final expandedNoTitle = (string('[section,expanded]', ignoreCase: true))
         .map((_) => (null as String?, true));
     final titleOnly = (
       string('[section=', ignoreCase: true),
-      pattern('^]\n').starString(),
+      pattern('^]').starString(),
       char(']'),
     ).toSequenceParser().map((parts) => (parts.$2 as String?, null as bool?));
     final plain = (string('[section]', ignoreCase: true)).map(
@@ -430,6 +445,12 @@ class DTextGrammar {
       close.optional(),
     ).toSequenceParser().map((parts) => DTextSpoilerBlock(parts.$3));
   }
+
+  Parser<List<DTextBlock>> _blocksUntil(
+    SettableParser<DTextBlock> block,
+    Parser<Object?> terminator,
+  ) =>
+      _blocksUntilImpl(block, terminator, requireClose: true);
 
   // Variant for block openers that e621ng/dtext allows to run unterminated
   // to EOF (`[section]`, `[quote]`, `[spoiler]`). The block emits whatever
@@ -522,11 +543,12 @@ class DTextGrammar {
     });
   }
 
-  // `[ltable]` content is synthesised into a `[table]` string and run
-  // through [_tableBlock]. e621ng/dtext does the same in a ruby
-  // preprocessing pass: rewriting to `[table]` before the ragel parser
-  // sees it lets inline rules (notably `[code]` and `\`...\``) scan
-  // across what used to be the pipe boundary in the ltable source.
+  // e621ng/dtext runs a ruby preprocessing pass that rewrites every
+  // `[ltable]...[/ltable]` to a synthetic `[table]...[/table]` string before
+  // the ragel parser sees it, which lets inline rules (notably `[code]` and
+  // `\`...\``) scan across what used to be the pipe boundary in the ltable
+  // source. Mirror that: synthesise the table string, run our regular
+  // `_tableBlock` on it, and return its children.
   List<DTextTableChild> _buildLTableChildren(
     String source,
     SettableParser<DTextInline> inline,
@@ -595,10 +617,11 @@ class DTextGrammar {
   ) {
     final cellTh = _tableCell('th', DTextTableCellType.th, inline);
     final cellTd = _tableCell('td', DTextTableCellType.td, inline);
-    // Single-char fallback inside the row's choice so a stray wiki link
-    // between cells does not stop the row collector early. e621ng/dtext's
-    // table-row scope swallows any non-cell content one char at a time
-    // and walks until it hits `[/tr]` or end.
+    // e621ng/dtext's table-row scope swallows any non-cell content one
+    // char at a time and keeps walking until it hits `[/tr]` or end.
+    // Mirror that with a single-char fallback inside the row's choice so
+    // a stray wiki link between cells does not stop the row collector
+    // early.
     final rowStray = (_tagClose('tr').and().not(), any()).toSequenceParser()
         .map<Object?>((_) => null);
     final row = (
@@ -623,9 +646,9 @@ class DTextGrammar {
     ).toSequenceParser().map<DTextTableChild>(
       (parts) => DTextTableHead(_wrapBareCells(parts.$3)),
     );
-    // `head` is allowed inside the body's star because e621ng/dtext
-    // keeps a nested `[thead]` inside `[tbody]` rather than closing the
-    // body, so the head shows up as one of the body's rows.
+    // e621ng/dtext keeps a nested `[thead]` inside `[tbody]` rather than
+    // closing the body, so the head shows up as one of the body's rows.
+    // Mirror that by allowing `head` inside the body's star.
     final body = (
       _ws(),
       _tagOpen('tbody'),
@@ -694,15 +717,15 @@ class DTextGrammar {
   Parser<void> _ws() => pattern(' \t\r\n').star();
 
   Parser<DTextList> _list(SettableParser<DTextInline> inline) {
-    // Each item captures characters up to a newline or in-scope block
-    // close tag, then runs the slice through [_parseInline]. e621ng/dtext
-    // slices each item to a single line and parses the slice as inline,
-    // truncating at the first in-scope block close. An unclosed `[sub]`
-    // cannot escape the slice; a stray `[/section]` stays in the outer
-    // stream for the surrounding section.
+    // e621ng/dtext slices each list item to a single line, then parses
+    // the slice as inline, truncating at the first in-scope block close.
+    // Mirror both: capture chars up to a newline or list-line stop tag,
+    // then [_parseInline] the slice. Unclosed `[sub]` inside the slice
+    // cannot escape; a stray `[/section]` stays in the outer stream for
+    // the surrounding section.
     //
     // The line scanner is a custom parser (see [_ListLineParser]) because
-    // `(stop.not(), pattern('^\n\r')).toSequenceParser()` per char
+    // running `(stop.not(), pattern('^\n\r')).toSequenceParser()` per char
     // dominated profile time on list-heavy fixtures.
     final lineBody = _ListLineParser();
     final item = (
@@ -793,20 +816,54 @@ class DTextGrammar {
   ).toSequenceParser().and();
 
   // `spoiler`/`spoilers` are omitted: e621ng/dtext treats them as inline,
-  // not block, even at line start. Attribute forms like
-  // `[section,expanded=...]` and `[quote=#abc]` match here too via the
-  // `,`/`=` terminator choice.
-  Parser<void> _blockTagOpenLookahead() => (
-    char('['),
-    [
+  // not block, even at line start. Each tag's shape mirrors what its
+  // block parser will actually accept, so the lookahead never fires on an
+  // opener the block parser will reject (which would strand paragraph
+  // parsing in [_BlockDispatchParser]'s fall-through).
+  Parser<void> _blockTagOpenLookahead() {
+    final quote = (
       string('quote', ignoreCase: true),
-      string('code', ignoreCase: true),
+      [
+        char(']'),
+        (
+          char('='),
+          pattern('^]\n').starString(),
+          char(']'),
+        ).toSequenceParser(),
+      ].toChoiceParser(),
+    ).toSequenceParser();
+    final section = (
       string('section', ignoreCase: true),
-      string('table', ignoreCase: true),
-      string('ltable', ignoreCase: true),
-    ].toChoiceParser(),
-    [char(']'), char('='), char(',')].toChoiceParser(),
-  ).toSequenceParser().and();
+      [
+        char(']'),
+        (
+          char('='),
+          pattern('^]').starString(),
+          char(']'),
+        ).toSequenceParser(),
+        (
+          string(',expanded', ignoreCase: true),
+          [
+            char(']'),
+            (
+              char('='),
+              pattern('^]').starString(),
+              char(']'),
+            ).toSequenceParser(),
+          ].toChoiceParser(),
+        ).toSequenceParser(),
+      ].toChoiceParser(),
+    ).toSequenceParser();
+    final plain = [
+      string('code]', ignoreCase: true),
+      string('table]', ignoreCase: true),
+      string('ltable]', ignoreCase: true),
+    ].toChoiceParser();
+    return (
+      char('['),
+      <Parser<Object?>>[quote, section, plain].toChoiceParser(),
+    ).toSequenceParser().and();
+  }
 
   Parser<void> _listOpenLookahead() =>
       (char('*').plus(), char(' ')).toSequenceParser().and();
@@ -935,8 +992,9 @@ class DTextGrammar {
   // Body of a `[b]` / `[i]` / `[color=…]` etc. container. e621ng/dtext
   // silently swallows `\n\n` runs inside an inline container and keeps
   // the container open, so `[i]a\n\nb[/i]` yields a single italic span
-  // around merged text. The blank-line eater encodes this; the other
-  // stops match surrounding-context exits from the ruby parser.
+  // around merged text. The blank-line eater here mirrors that; every
+  // other stop matches the surrounding-context exits the ruby parser
+  // uses.
   Parser<List<DTextInline>> _inlineContainerBody(
     SettableParser<DTextInline> inline,
     Parser<Object?> close,
@@ -1054,7 +1112,7 @@ class DTextGrammar {
 
   // Bare URL matcher (ragel `url = 'http'i 's'i? '://' ^space+`). e621ng/dtext
   // breaks out of the text scanner at `h`/`H` + `"http"` and tries this rule.
-  // Inline-choice order matters: this must run after the bracketed-form
+  // Order in our inline choice matters: this runs after the bracketed-form
   // matchers (`<http…>`, `"…":http…`) so it does not steal their inputs.
   Parser<DTextInline> _inlineUrl() => (
     [
@@ -1635,7 +1693,7 @@ class _BlockDispatchParser extends Parser<DTextBlock> {
       } else if (c == 0x5b) {
         final r = bracketBlock.parseOn(context);
         if (r is Success<Object?>) {
-          return context.success(r.value! as DTextBlock, r.position);
+          return context.success(r.value as DTextBlock, r.position);
         }
       }
     }
@@ -1705,10 +1763,11 @@ class _NewlineParser extends Parser<void> {
   Parser<void> copy() => _NewlineParser();
 }
 
-// Succeeds at column 0 (pos 0 or preceded by `\n`). Implements
-// e621ng/dtext's "at line start" check (ruby precondition for block
-// markers) so the inline container can break on a list/header marker
-// after the blank-line eater has already swallowed the leading `\n`s.
+// Succeeds at column 0: either pos 0 or the preceding char is `\n`.
+// Mirrors e621ng/dtext's "at line start" check (ruby precondition for
+// block markers) so the inline container can break on a list/header
+// marker after the blank-line eater has already swallowed the leading
+// `\n`s.
 class _AtLineStartParser extends Parser<void> {
   @override
   Result<void> parseOn(Context context) {
