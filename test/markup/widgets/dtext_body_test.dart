@@ -21,7 +21,7 @@ void main() {
     testWidgets('paragraph with plain text', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextParagraph([DTextText('hello world')]),
             ]),
@@ -34,7 +34,7 @@ void main() {
     testWidgets('header h1 produces bold larger text', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextHeader(level: 1, children: [DTextText('Title')]),
             ]),
@@ -47,9 +47,9 @@ void main() {
     testWidgets('code block renders content selectable', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
-              DTextCodeBlock('x := 1\ny := 2'),
+              const DTextCodeBlock('x := 1\ny := 2'),
             ]),
           ),
         ),
@@ -61,7 +61,7 @@ void main() {
     testWidgets('quote wraps in QuoteWrap', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextQuote(
                 children: [
@@ -79,7 +79,7 @@ void main() {
     testWidgets('section wraps in SectionWrap', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextSection(
                 title: 'Heading',
@@ -100,7 +100,7 @@ void main() {
     testWidgets('list renders each item with bullet', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextList([
                 DTextListItem(depth: 1, children: [DTextText('one')]),
@@ -117,7 +117,7 @@ void main() {
     testWidgets('table renders header and body cells', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextTable([
                 DTextTableHead([
@@ -156,10 +156,23 @@ void main() {
       expect(find.textContaining('42'), findsOneWidget);
     });
 
+    testWidgets('raw_block_text renders content verbatim', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          DTextBody(
+            content: DTextDocument([
+              const DTextRawBlockText('[/closetag]'),
+            ]),
+          ),
+        ),
+      );
+      expect(find.textContaining('[/closetag]'), findsOneWidget);
+    });
+
     testWidgets('literal_html renders prefix and inline tail', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextLiteralHtml(
                 prefix: '[/code]',
@@ -178,7 +191,7 @@ void main() {
     testWidgets('bold/italic/underline/strikeout all visible', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextParagraph([
                 DTextBold([DTextText('bold')]),
@@ -202,7 +215,7 @@ void main() {
     testWidgets('superscript and subscript visible', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextParagraph([
                 DTextText('E=mc'),
@@ -221,11 +234,11 @@ void main() {
     testWidgets('inline code shows content', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextParagraph([
                 DTextText('see '),
-                DTextInlineCode('foo()'),
+                const DTextInlineCode('foo()'),
                 DTextText(' for details'),
               ]),
             ]),
@@ -238,7 +251,7 @@ void main() {
     testWidgets('color span renders children', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextParagraph([
                 DTextColor(color: 'red', children: [DTextText('warning')]),
@@ -253,7 +266,7 @@ void main() {
     testWidgets('inline_spoiler starts hidden but still in tree', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextParagraph([
                 DTextText('reveal '),
@@ -270,11 +283,11 @@ void main() {
     testWidgets('line_break inserts a newline', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextParagraph([
                 DTextText('first'),
-                DTextLineBreak(),
+                const DTextLineBreak(),
                 DTextText('second'),
               ]),
             ]),
@@ -289,7 +302,7 @@ void main() {
       const node = DTextInternalAnchor('my-section');
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextParagraph([node]),
             ]),
@@ -302,7 +315,7 @@ void main() {
     testWidgets('fragment renders children transparently', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const DTextBody(
+          DTextBody(
             content: DTextDocument([
               DTextParagraph([
                 DTextFragment(
@@ -322,7 +335,7 @@ void main() {
     testWidgets('long paragraph wraps without RenderFlex overflow', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const SizedBox(
+          SizedBox(
             width: 200,
             child: DTextBody(
               content: DTextDocument([

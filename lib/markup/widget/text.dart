@@ -202,6 +202,10 @@ class DTextBody extends StatelessWidget {
       DTextTable() => DTextTableWidget(children: block.children),
       DTextLTable() => DTextTableWidget(children: block.children),
       DTextList() => _renderList(context, block),
+      DTextRawBlockText() => SelectableText(
+        block.content,
+        textAlign: textAlign,
+      ),
       DTextLiteralHtml() => Text.rich(
         TextSpan(
           children: [

@@ -134,6 +134,18 @@ final class DTextCodeBlock extends DTextBlock {
   Map<String, Object?> toJson() => {'type': type, 'content': content};
 }
 
+final class DTextRawBlockText extends DTextBlock {
+  const DTextRawBlockText(this.content);
+
+  final String content;
+
+  @override
+  String get type => 'raw_block_text';
+
+  @override
+  Map<String, Object?> toJson() => {'type': type, 'content': content};
+}
+
 final class DTextLiteralHtml extends DTextBlock {
   const DTextLiteralHtml({required this.prefix, required this.children});
 
