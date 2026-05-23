@@ -1793,6 +1793,20 @@ class _ListLineParser extends Parser<String> {
     return false;
   }
 
+  // When the cursor sits on `[[`, jump past the matching `]]` on the same
+  // line so the inner `[code]/[table]/[ltable]` literal does not trip the
+  // stop scanner and strand the rest of the list item. Returns the index
+  // just past `]]`, or -1 if no close is found on this line.
+  static int _wikiLinkEnd(String buf, int pos, int len) {
+    if (pos + 1 >= len || buf.codeUnitAt(pos + 1) != 0x5b) return -1;
+    for (var j = pos + 2; j + 1 < len; j++) {
+      final c = buf.codeUnitAt(j);
+      if (c == 0x0a || c == 0x0d) return -1;
+      if (c == 0x5d && buf.codeUnitAt(j + 1) == 0x5d) return j + 2;
+    }
+    return -1;
+  }
+
   @override
   Result<String> parseOn(Context context) {
     final buf = context.buffer;
@@ -1802,7 +1816,14 @@ class _ListLineParser extends Parser<String> {
     while (i < len) {
       final c = buf.codeUnitAt(i);
       if (c == 0x0a || c == 0x0d) break;
-      if (c == 0x5b && _isStopAt(buf, i)) break;
+      if (c == 0x5b) {
+        final wikiEnd = _wikiLinkEnd(buf, i, len);
+        if (wikiEnd > 0) {
+          i = wikiEnd;
+          continue;
+        }
+        if (_isStopAt(buf, i)) break;
+      }
       i++;
     }
     if (i == start) return context.failure('list line char expected');
@@ -1816,7 +1837,14 @@ class _ListLineParser extends Parser<String> {
     while (i < len) {
       final c = buf.codeUnitAt(i);
       if (c == 0x0a || c == 0x0d) break;
-      if (c == 0x5b && _isStopAt(buf, i)) break;
+      if (c == 0x5b) {
+        final wikiEnd = _wikiLinkEnd(buf, i, len);
+        if (wikiEnd > 0) {
+          i = wikiEnd;
+          continue;
+        }
+        if (_isStopAt(buf, i)) break;
+      }
       i++;
     }
     return i == position ? -1 : i;

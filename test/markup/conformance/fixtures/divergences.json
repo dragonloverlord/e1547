@@ -28,8 +28,7 @@
       "type": "document"
     },
     "input": "* [[table]]",
-    "label": "A. list-item wiki link to block-tag name collapses doc to raw_block_text",
-    "skip": "known divergence: _ListLineParser._isStopAt does not see [[...]] wiki-link nesting and stops the line at the inner '[code]/[table]/[ltable]' literal, stranding the rest of the document"
+    "label": "A. list-item wiki link to block-tag name collapses doc to raw_block_text"
   },
   {
     "expected": {
