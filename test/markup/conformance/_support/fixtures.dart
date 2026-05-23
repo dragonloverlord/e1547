@@ -4,6 +4,10 @@
 // is a thin wrapper that calls [runFixtures] with its category name. The
 // runner loads `fixtures/<category>.json`, iterates entries, and asserts
 // that the Dart parser's canonical JSON output equals the frozen expected.
+//
+// This file survives commit 2. It does NOT depend on `_bridge/`, `_compare/`,
+// or `_bench/` so plain `flutter test test/markup/conformance/` works after
+// the dev harness is deleted.
 
 import 'dart:convert';
 import 'dart:io';
@@ -19,6 +23,7 @@ class ConformanceFixture {
     required this.label,
     required this.input,
     required this.expected,
+    required this.skip,
   });
 
   factory ConformanceFixture.fromJson(Map<String, dynamic> json) =>
@@ -26,6 +31,7 @@ class ConformanceFixture {
         label: json['label'] as String,
         input: json['input'] as String,
         expected: json['expected'],
+        skip: json['skip'] as String?,
       );
 
   /// Human-readable identifier shown in test output.
@@ -37,9 +43,14 @@ class ConformanceFixture {
   /// The canonical AST tree (Map / List / scalar) the parser must produce,
   /// frozen at corpus distillation time from the dmark proxy oracle's
   /// `parseDTextToAST`. May be `null` for entries that have not been
-  /// regenerated yet; such entries fail loudly so the corpus author knows
-  /// the fixture is incomplete.
+  /// regenerated yet; such entries fail loudly so the corpus author is
+  /// forced to run regenerate.sh.
   final Object? expected;
+
+  /// If non-null, the test is marked skipped with this reason. Used to pin
+  /// known divergences so the test surfaces both as a doc of the bug and a
+  /// signal when the underlying bug is fixed.
+  final String? skip;
 }
 
 List<ConformanceFixture> loadFixtures(String category) {
@@ -59,25 +70,29 @@ void runFixtures(String category) {
   final fixtures = loadFixtures(category);
   group(category, () {
     for (final f in fixtures) {
-      test(f.label, () {
-        if (f.expected == null) {
-          fail(
-            'fixture "${f.label}" in $category.json has no frozen expected '
-            'value',
-          );
-        }
-        final ast = _parseToJson(f.input);
-        final expectedJson = canonicalize(f.expected);
-        final actualJson = canonicalize(ast);
-        if (actualJson != expectedJson) {
-          fail(
-            'AST mismatch for "${f.label}"\n'
-            '  input:    ${json.encode(f.input)}\n'
-            '  expected: $expectedJson\n'
-            '  actual:   $actualJson',
-          );
-        }
-      });
+      test(
+        f.label,
+        () {
+          if (f.expected == null) {
+            fail(
+              'fixture "${f.label}" in $category.json has no frozen expected '
+              'value; run test/markup/regenerate.sh to populate it',
+            );
+          }
+          final ast = _parseToJson(f.input);
+          final expectedJson = canonicalize(f.expected);
+          final actualJson = canonicalize(ast);
+          if (actualJson != expectedJson) {
+            fail(
+              'AST mismatch for "${f.label}"\n'
+              '  input:    ${json.encode(f.input)}\n'
+              '  expected: $expectedJson\n'
+              '  actual:   $actualJson',
+            );
+          }
+        },
+        skip: f.skip,
+      );
     }
   });
 }

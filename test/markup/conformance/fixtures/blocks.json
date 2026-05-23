@@ -1309,7 +1309,7 @@
       "type": "document"
     },
     "input": "no open above[/code]",
-    "label": "stray code close becomes literal_html"
+    "label": "stray code close becomes raw_block_text"
   },
   {
     "expected": {
@@ -1332,7 +1332,7 @@
       "type": "document"
     },
     "input": "untable[/table]",
-    "label": "stray table close becomes literal_html"
+    "label": "stray table close becomes raw_block_text"
   },
   {
     "expected": {

@@ -1,0 +1,178 @@
+[
+  {
+    "expected": {
+      "children": [
+        {
+          "items": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "content": "table",
+                      "type": "text"
+                    }
+                  ],
+                  "href": "/wiki_pages/show_or_new?title=table",
+                  "linkType": "wiki",
+                  "type": "link"
+                }
+              ],
+              "depth": 1,
+              "type": "list_item"
+            }
+          ],
+          "type": "list"
+        }
+      ],
+      "type": "document"
+    },
+    "input": "* [[table]]",
+    "label": "A. list-item wiki link to block-tag name collapses doc to raw_block_text",
+    "skip": "known divergence: _ListLineParser._isStopAt does not see [[...]] wiki-link nesting and stops the line at the inner '[code]/[table]/[ltable]' literal, stranding the rest of the document"
+  },
+  {
+    "expected": {
+      "children": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "content": "x",
+                      "type": "text"
+                    }
+                  ],
+                  "href": "/users/1[/i",
+                  "linkType": "inline",
+                  "type": "link"
+                },
+                {
+                  "content": "]",
+                  "type": "text"
+                }
+              ],
+              "type": "italic"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "content": "After",
+              "type": "text"
+            }
+          ],
+          "level": 4,
+          "type": "header"
+        }
+      ],
+      "type": "document"
+    },
+    "input": "[i]\"x\":/users/1[/i]\n\nh4. After",
+    "label": "B. textile URL absorbs a following inline close tag",
+    "skip": "known divergence: known-divergences.md Pattern 1. _textileUrl is greedy on non-whitespace, swallowing [/i]; our paragraph then merges the following header text instead of starting a new header block"
+  },
+  {
+    "expected": {
+      "children": [
+        {
+          "children": [
+            {
+              "content": "see [[tag||Title]] here",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "type": "document"
+    },
+    "input": "see [[tag||Title]] here",
+    "label": "C. wiki link with empty tag side of '||' should be plain text",
+    "skip": "known divergence: _wikiLink accepts an empty section before '|' as a valid wiki link and renders '|Title' as link text; the reference rejects the construct and keeps the whole '[[tag||Title]]' literal as paragraph text"
+  },
+  {
+    "expected": {
+      "children": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "content": "hi",
+                  "type": "text"
+                }
+              ],
+              "color": "red",
+              "type": "color"
+            }
+          ],
+          "level": 4,
+          "type": "header"
+        },
+        {
+          "children": [
+            {
+              "content": "rest",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "type": "document"
+    },
+    "input": "h4. [color=red]hi\nrest",
+    "label": "D. header containing unclosed inline keeps eating across the newline",
+    "skip": "known divergence: an unclosed inline container inside a header consumes the line break and the following line; the reference closes the header at the newline and starts a new paragraph"
+  },
+  {
+    "expected": {
+      "children": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "content": "link",
+                  "type": "text"
+                }
+              ],
+              "href": "http://e.com/x.xml\"",
+              "linkType": "inline",
+              "type": "link"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "type": "document"
+    },
+    "input": "\"link\":http://e.com/x.xml\"",
+    "label": "E. textile URL drops a trailing quote that the reference keeps",
+    "skip": "known divergence: _UrlBodyParser strips the trailing '\"' from the URL body; the reference includes it in the href since the regex is greedy on non-whitespace"
+  },
+  {
+    "expected": {
+      "children": [
+        {
+          "children": [
+            {
+              "content": "body [/quote]",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "type": "document"
+    },
+    "input": "body [/quote]",
+    "label": "F. stray close tag at top level splits the surrounding paragraph",
+    "skip": "known divergence: _closingTagLookahead in the paragraph terminator fires on stray closes with no matching open in scope, then _strayClosePassthrough emits the stray close as its own paragraph block; the reference keeps it as inline text in the same paragraph"
+  }
+]

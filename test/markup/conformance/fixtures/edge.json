@@ -463,5 +463,86 @@
     },
     "input": "* one\n* two\n",
     "label": "mixed list markers same depth"
+  },
+  {
+    "expected": {
+      "children": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "content": "body",
+                  "type": "text"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ],
+          "expanded": true,
+          "title": "Ember pre-rust (2024)\n - by jejejunum",
+          "type": "section"
+        }
+      ],
+      "type": "document"
+    },
+    "input": "[section,expanded=Ember pre-rust (2024)\n - by jejejunum]\nbody\n[/section]",
+    "label": "section expanded with multi-line title"
+  },
+  {
+    "expected": {
+      "children": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "content": "body",
+                  "type": "text"
+                }
+              ],
+              "type": "paragraph"
+            }
+          ],
+          "title": "Title line one\nline two",
+          "type": "section"
+        }
+      ],
+      "type": "document"
+    },
+    "input": "[section=Title line one\nline two]\nbody\n[/section]",
+    "label": "section with multi-line title"
+  },
+  {
+    "expected": {
+      "children": [
+        {
+          "children": [
+            {
+              "content": "[quote=name",
+              "type": "text"
+            },
+            {
+              "type": "line_break"
+            },
+            {
+              "content": "rest]",
+              "type": "text"
+            },
+            {
+              "type": "line_break"
+            },
+            {
+              "content": "body",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "type": "document"
+    },
+    "input": "[quote=name\nrest]\nbody",
+    "label": "quote opener with newline cite is plain text"
   }
 ]
