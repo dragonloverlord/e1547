@@ -812,8 +812,18 @@ class DTextGrammar {
         _blockOpenerLookahead(),
       ].toChoiceParser(),
     ).toSequenceParser().map((_) => null);
+    // When an inline container (italic, color, etc.) ate the blank line
+    // that would have separated blocks, the cursor lands on the next
+    // block's opener with no `\n` left for [newlineLed] to see. Recover by
+    // also stopping when we are at line start and the next chars open a
+    // header or list.
+    final lineStartBlockOpener = (
+      _atLineStartLookahead(),
+      [_headerOpenLookahead(), _listOpenLookahead()].toChoiceParser(),
+    ).toSequenceParser().map((_) => null);
     return [
       newlineLed,
+      lineStartBlockOpener,
       _alwaysStopCloseLookahead(),
       _activeCloseLookahead(),
       _blockTagOpenLookahead(),
@@ -1484,12 +1494,17 @@ class DTextGrammar {
 class _UrlBodyParser extends Parser<String> {
   // Whitespace stop set: space (0x20) plus tab/LF/VT/FF/CR (0x09..0x0d).
   // Inlined as a range check so the hot scan loop avoids a Set hash.
+  // e621ng/dtext does not exclude `[` here. `[/i` and similar fragments
+  // stay in the URL body and the trailing `]` falls out via punct trim.
   static bool _isStop(int c) => c == 0x20 || (c >= 0x09 && c <= 0x0d);
 
   // Trailing punctuation virtually never the last char of a real URL.
+  // `"` is NOT trimmed: e621ng/dtext keeps a closing quote that lands at
+  // the end of a textile URL body in the href, even though it usually looks
+  // like a stray character.
   static const Set<int> _trailingPunct = {
     0x2c, 0x2e, 0x3b, 0x3a, 0x21, 0x3f, // , . ; : ! ?
-    0x22, 0x27, // " '
+    0x27, // '
     0x29, 0x5d, 0x7d, // ) ] }
   };
 

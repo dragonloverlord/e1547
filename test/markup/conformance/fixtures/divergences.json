@@ -72,8 +72,7 @@
       "type": "document"
     },
     "input": "[i]\"x\":/users/1[/i]\n\nh4. After",
-    "label": "B. textile URL absorbs a following inline close tag",
-    "skip": "known divergence: known-divergences.md Pattern 1. _textileUrl is greedy on non-whitespace, swallowing [/i]; our paragraph then merges the following header text instead of starting a new header block"
+    "label": "B. textile URL absorbs a following inline close tag"
   },
   {
     "expected": {
@@ -150,8 +149,7 @@
       "type": "document"
     },
     "input": "\"link\":http://e.com/x.xml\"",
-    "label": "E. textile URL drops a trailing quote that the reference keeps",
-    "skip": "known divergence: _UrlBodyParser strips the trailing '\"' from the URL body; the reference includes it in the href since the regex is greedy on non-whitespace"
+    "label": "E. textile URL drops a trailing quote that the reference keeps"
   },
   {
     "expected": {
