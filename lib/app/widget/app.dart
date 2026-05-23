@@ -5,6 +5,7 @@ import 'package:e1547/follow/follow.dart';
 import 'package:e1547/logs/logs.dart';
 import 'package:e1547/settings/settings.dart';
 import 'package:e1547/shared/shared.dart';
+import 'package:e1547/task/task.dart';
 import 'package:e1547/user/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -70,6 +71,7 @@ class App extends StatelessWidget {
                                 TraitsClientProvider(),
                                 ClientProvider(),
                                 CacheManagerProvider(),
+                                TasksControllerProvider(),
                               ],
                               child: LoadingCore(
                                 child: ErrorNotifier(
@@ -81,7 +83,10 @@ class App extends StatelessWidget {
                                         navigatorKey: navigatorKey,
                                         child: NotificationHandler(
                                           navigatorKey: navigatorKey,
-                                          child: child!,
+                                          child: TasksOverlayHost(
+                                            navigatorKey: navigatorKey,
+                                            child: child!,
+                                          ),
                                         ),
                                       ),
                                     ),

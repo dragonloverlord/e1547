@@ -3,6 +3,7 @@ import 'package:e1547/follow/data/database.dart';
 import 'package:e1547/history/history.dart';
 import 'package:e1547/identity/data/database.dart';
 import 'package:e1547/shared/shared.dart';
+import 'package:e1547/task/task.dart';
 import 'package:e1547/traits/traits.dart';
 import 'package:notified_preferences/notified_preferences.dart';
 
@@ -17,13 +18,15 @@ import 'storage.drift.dart';
     HistoriesIdentitiesTable,
     FollowsTable,
     FollowsIdentitiesTable,
+    TasksTable,
+    TasksIdentitiesTable,
   ],
 )
 class AppDatabase extends $AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -41,6 +44,12 @@ class AppDatabase extends $AppDatabase {
               BEGIN
                   DELETE FROM histories_table
                   WHERE id IN (SELECT history FROM histories_identities_table WHERE identity = OLD.id);
+              END;
+              CREATE TRIGGER delete_identity_tasks
+              AFTER DELETE ON identities_table
+              BEGIN
+                  DELETE FROM tasks_table
+                  WHERE id IN (SELECT task FROM tasks_identities_table WHERE identity = OLD.id);
               END;
             ''');
       });
@@ -66,6 +75,26 @@ class AppDatabase extends $AppDatabase {
             newColumns: [traitsTable.writeHistory, traitsTable.trimHistory],
           ),
         );
+      }
+      if (from < 6) {
+        final existing = await customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'tasks_table'",
+        ).get();
+        if (existing.isEmpty) {
+          await m.createTable(tasksTable);
+          await m.createTable(tasksIdentitiesTable);
+          await customStatement('''
+                CREATE TRIGGER delete_identity_tasks
+                AFTER DELETE ON identities_table
+                BEGIN
+                    DELETE FROM tasks_table
+                    WHERE id IN (SELECT task FROM tasks_identities_table WHERE identity = OLD.id);
+                END;
+              ''');
+        }
+      }
+      if (from >= 6 && from < 7) {
+        await m.addColumn(tasksTable, tasksTable.metadata);
       }
     },
     beforeOpen: (details) => customStatement('PRAGMA foreign_keys = ON'),

@@ -5,6 +5,7 @@ import 'package:e1547/identity/data/database.drift.dart' as i1;
 import 'package:e1547/traits/data/database.drift.dart' as i2;
 import 'package:e1547/history/data/database.drift.dart' as i3;
 import 'package:e1547/follow/data/database.drift.dart' as i4;
+import 'package:e1547/task/data/database.drift.dart' as i5;
 
 abstract class $AppDatabase extends i0.GeneratedDatabase {
   $AppDatabase(i0.QueryExecutor e) : super(e);
@@ -20,6 +21,9 @@ abstract class $AppDatabase extends i0.GeneratedDatabase {
   late final i4.$FollowsTableTable followsTable = i4.$FollowsTableTable(this);
   late final i4.$FollowsIdentitiesTableTable followsIdentitiesTable = i4
       .$FollowsIdentitiesTableTable(this);
+  late final i5.$TasksTableTable tasksTable = i5.$TasksTableTable(this);
+  late final i5.$TasksIdentitiesTableTable tasksIdentitiesTable = i5
+      .$TasksIdentitiesTableTable(this);
   @override
   Iterable<i0.TableInfo<i0.Table, Object?>> get allTables =>
       allSchemaEntities.whereType<i0.TableInfo<i0.Table, Object?>>();
@@ -31,73 +35,87 @@ abstract class $AppDatabase extends i0.GeneratedDatabase {
     historiesIdentitiesTable,
     followsTable,
     followsIdentitiesTable,
+    tasksTable,
+    tasksIdentitiesTable,
   ];
   @override
-  i0.StreamQueryUpdateRules get streamUpdateRules =>
-      const i0.StreamQueryUpdateRules([
-        i0.WritePropagation(
-          on: i0.TableUpdateQuery.onTableName(
-            'identities_table',
-            limitUpdateKind: i0.UpdateKind.delete,
-          ),
-          result: [i0.TableUpdate('traits_table', kind: i0.UpdateKind.delete)],
+  i0.StreamQueryUpdateRules
+  get streamUpdateRules => const i0.StreamQueryUpdateRules([
+    i0.WritePropagation(
+      on: i0.TableUpdateQuery.onTableName(
+        'identities_table',
+        limitUpdateKind: i0.UpdateKind.delete,
+      ),
+      result: [i0.TableUpdate('traits_table', kind: i0.UpdateKind.delete)],
+    ),
+    i0.WritePropagation(
+      on: i0.TableUpdateQuery.onTableName(
+        'identities_table',
+        limitUpdateKind: i0.UpdateKind.update,
+      ),
+      result: [i0.TableUpdate('traits_table', kind: i0.UpdateKind.update)],
+    ),
+    i0.WritePropagation(
+      on: i0.TableUpdateQuery.onTableName(
+        'histories_table',
+        limitUpdateKind: i0.UpdateKind.delete,
+      ),
+      result: [
+        i0.TableUpdate(
+          'histories_identities_table',
+          kind: i0.UpdateKind.delete,
         ),
-        i0.WritePropagation(
-          on: i0.TableUpdateQuery.onTableName(
-            'identities_table',
-            limitUpdateKind: i0.UpdateKind.update,
-          ),
-          result: [i0.TableUpdate('traits_table', kind: i0.UpdateKind.update)],
+      ],
+    ),
+    i0.WritePropagation(
+      on: i0.TableUpdateQuery.onTableName(
+        'histories_table',
+        limitUpdateKind: i0.UpdateKind.update,
+      ),
+      result: [
+        i0.TableUpdate(
+          'histories_identities_table',
+          kind: i0.UpdateKind.update,
         ),
-        i0.WritePropagation(
-          on: i0.TableUpdateQuery.onTableName(
-            'histories_table',
-            limitUpdateKind: i0.UpdateKind.delete,
-          ),
-          result: [
-            i0.TableUpdate(
-              'histories_identities_table',
-              kind: i0.UpdateKind.delete,
-            ),
-          ],
-        ),
-        i0.WritePropagation(
-          on: i0.TableUpdateQuery.onTableName(
-            'histories_table',
-            limitUpdateKind: i0.UpdateKind.update,
-          ),
-          result: [
-            i0.TableUpdate(
-              'histories_identities_table',
-              kind: i0.UpdateKind.update,
-            ),
-          ],
-        ),
-        i0.WritePropagation(
-          on: i0.TableUpdateQuery.onTableName(
-            'follows_table',
-            limitUpdateKind: i0.UpdateKind.delete,
-          ),
-          result: [
-            i0.TableUpdate(
-              'follows_identities_table',
-              kind: i0.UpdateKind.delete,
-            ),
-          ],
-        ),
-        i0.WritePropagation(
-          on: i0.TableUpdateQuery.onTableName(
-            'follows_table',
-            limitUpdateKind: i0.UpdateKind.update,
-          ),
-          result: [
-            i0.TableUpdate(
-              'follows_identities_table',
-              kind: i0.UpdateKind.update,
-            ),
-          ],
-        ),
-      ]);
+      ],
+    ),
+    i0.WritePropagation(
+      on: i0.TableUpdateQuery.onTableName(
+        'follows_table',
+        limitUpdateKind: i0.UpdateKind.delete,
+      ),
+      result: [
+        i0.TableUpdate('follows_identities_table', kind: i0.UpdateKind.delete),
+      ],
+    ),
+    i0.WritePropagation(
+      on: i0.TableUpdateQuery.onTableName(
+        'follows_table',
+        limitUpdateKind: i0.UpdateKind.update,
+      ),
+      result: [
+        i0.TableUpdate('follows_identities_table', kind: i0.UpdateKind.update),
+      ],
+    ),
+    i0.WritePropagation(
+      on: i0.TableUpdateQuery.onTableName(
+        'tasks_table',
+        limitUpdateKind: i0.UpdateKind.delete,
+      ),
+      result: [
+        i0.TableUpdate('tasks_identities_table', kind: i0.UpdateKind.delete),
+      ],
+    ),
+    i0.WritePropagation(
+      on: i0.TableUpdateQuery.onTableName(
+        'tasks_table',
+        limitUpdateKind: i0.UpdateKind.update,
+      ),
+      result: [
+        i0.TableUpdate('tasks_identities_table', kind: i0.UpdateKind.update),
+      ],
+    ),
+  ]);
 }
 
 class $AppDatabaseManager {
@@ -121,4 +139,8 @@ class $AppDatabaseManager {
         _db,
         _db.followsIdentitiesTable,
       );
+  i5.$$TasksTableTableTableManager get tasksTable =>
+      i5.$$TasksTableTableTableManager(_db, _db.tasksTable);
+  i5.$$TasksIdentitiesTableTableTableManager get tasksIdentitiesTable =>
+      i5.$$TasksIdentitiesTableTableTableManager(_db, _db.tasksIdentitiesTable);
 }

@@ -50,7 +50,6 @@ class PostSelectionAppBar extends StatelessWidget with AppBarBuilderWidget {
               postFavoritingNotification(
                 context,
                 Set.from(data.selections),
-                controller,
                 isLiked,
               );
               data.onChanged({});

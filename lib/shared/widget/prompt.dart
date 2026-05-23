@@ -290,25 +290,33 @@ class PromptTextFieldSuffix extends StatelessWidget {
 
 Future<T?> showDefaultSlidingBottomSheet<T>(
   BuildContext context,
-  SheetBuilder builder, {
+  SheetBuilder? builder, {
+  CustomSheetBuilder? customBuilder,
   SnapSpec snapSpec = const SnapSpec(snappings: [0.6, SnapSpec.expanded]),
+  SheetBuilder? headerBuilder,
   SheetBuilder? footerBuilder,
+  Widget Function(BuildContext context, SlidingSheet sheet)? parentBuilder,
 }) async {
   return showSlidingBottomSheet<T>(
     context,
     builder: (context) => defaultSlidingSheetDialog(
       context,
       builder,
+      customBuilder: customBuilder,
       snapSpec: snapSpec,
+      headerBuilder: headerBuilder,
       footerBuilder: footerBuilder,
     ),
+    parentBuilder: parentBuilder,
   );
 }
 
 SlidingSheetDialog defaultSlidingSheetDialog(
   BuildContext context,
-  SheetBuilder builder, {
+  SheetBuilder? builder, {
+  CustomSheetBuilder? customBuilder,
   SnapSpec snapSpec = const SnapSpec(snappings: [0.6, SnapSpec.expanded]),
+  SheetBuilder? headerBuilder,
   SheetBuilder? footerBuilder,
 }) {
   return SlidingSheetDialog(
@@ -319,9 +327,10 @@ SlidingSheetDialog defaultSlidingSheetDialog(
     cornerRadius: 16,
     cornerRadiusOnFullscreen: 0,
     maxWidth: 600,
-    headerBuilder: (context, state) => const SheetHandle(),
+    headerBuilder: headerBuilder ?? (context, state) => const SheetHandle(),
     footerBuilder: footerBuilder,
     builder: builder,
+    customBuilder: customBuilder,
     snapSpec: snapSpec,
   );
 }

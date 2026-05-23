@@ -4,6 +4,7 @@ import 'package:e1547/pool/pool.dart';
 import 'package:e1547/post/post.dart';
 import 'package:e1547/settings/settings.dart';
 import 'package:e1547/shared/shared.dart';
+import 'package:e1547/task/task.dart';
 import 'package:e1547/topic/topic.dart';
 import 'package:e1547/traits/traits.dart';
 import 'package:flutter/material.dart';
@@ -95,6 +96,14 @@ final List<RouterDrawerDestination> rootDestintations = [
   RouterDrawerDestination(
     path: '/blacklist',
     builder: (context) => const DenyListPage(),
+  ),
+  NamedRouterDrawerDestination(
+    path: '/tasks',
+    name: 'Tasks',
+    icon: const Icon(Icons.task_alt),
+    builder: (context) => const TasksPage(),
+    enabled: _nonRecursive<TasksPage>,
+    group: _drawerSettingsGroup,
   ),
   NamedRouterDrawerDestination(
     path: '/settings',
