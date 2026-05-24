@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [20.4.0+100] - 2026-05-24
 ### Added
 - Download and favorite task UI
 
@@ -938,7 +938,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 - API client bindings
 
-[Unreleased]: https://github.com/clragon/e1547/compare/20.3.0+99...HEAD
+[20.4.0+100]: https://github.com/clragon/e1547/compare/20.3.0+99...20.4.0+100
 [20.3.0+99]: https://github.com/clragon/e1547/compare/20.2.0+98...20.3.0+99
 [20.2.0+98]: https://github.com/clragon/e1547/compare/20.1.1+97...20.2.0+98
 [20.1.1+97]: https://github.com/clragon/e1547/compare/20.1.0+96...20.1.1+97
